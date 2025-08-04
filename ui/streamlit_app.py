@@ -69,6 +69,14 @@ class OptimizedOptionsScalpingDashboard:
             st.session_state.last_data_update = 0
         if 'cached_rankings' not in st.session_state:
             st.session_state.cached_rankings = None
+        if 'max_trade_amount' not in st.session_state:
+            st.session_state.max_trade_amount = TRADING_CONFIG.get("MAX_POSITION_SIZE", 1000)
+        if 'max_daily_loss' not in st.session_state:
+            st.session_state.max_daily_loss = TRADING_CONFIG.get("MAX_DAILY_LOSS", 500)
+        if 'stop_loss_pct' not in st.session_state:
+            st.session_state.stop_loss_pct = TRADING_CONFIG.get("STOP_LOSS_PCT", 3.0)
+        if 'profit_target_pct' not in st.session_state:
+            st.session_state.profit_target_pct = TRADING_CONFIG.get("PROFIT_TARGET_PCT", 5.0)
     
     @st.cache_data(ttl=30)  # Cache for 30 seconds
     def get_cached_market_data(_self, symbols: List[str]) -> Dict[str, Dict]:
@@ -184,6 +192,74 @@ class OptimizedOptionsScalpingDashboard:
                 confirm_live = st.checkbox("I understand and accept the risks")
                 if not confirm_live:
                     st.stop()
+            
+            # Risk Management Controls
+            st.subheader("💰 Risk Management")
+            
+            # Max trade amount
+            max_trade_amount = st.number_input(
+                "Max Trade Amount ($)",
+                min_value=100,
+                max_value=10000,
+                value=TRADING_CONFIG.get("MAX_POSITION_SIZE", 1000),
+                step=100,
+                help="Maximum amount to invest in a single trade"
+            )
+            
+            # Max daily loss
+            max_daily_loss = st.number_input(
+                "Max Daily Loss ($)",
+                min_value=100,
+                max_value=5000,
+                value=TRADING_CONFIG.get("MAX_DAILY_LOSS", 500),
+                step=100,
+                help="Maximum amount to lose in a single day"
+            )
+            
+            # Stop loss percentage
+            stop_loss_pct = st.slider(
+                "Stop Loss (%)",
+                min_value=1.0,
+                max_value=10.0,
+                value=TRADING_CONFIG.get("STOP_LOSS_PCT", 3.0),
+                step=0.5,
+                help="Percentage loss at which to automatically sell"
+            )
+            
+            # Profit target percentage
+            profit_target_pct = st.slider(
+                "Profit Target (%)",
+                min_value=1.0,
+                max_value=20.0,
+                value=TRADING_CONFIG.get("PROFIT_TARGET_PCT", 5.0),
+                step=0.5,
+                help="Percentage gain at which to automatically sell"
+            )
+            
+            # Update session state with new values
+            st.session_state.max_trade_amount = max_trade_amount
+            st.session_state.max_daily_loss = max_daily_loss
+            st.session_state.stop_loss_pct = stop_loss_pct
+            st.session_state.profit_target_pct = profit_target_pct
+            
+            # Display current risk settings
+            st.info(f"""
+            **Current Risk Settings:**
+            - Max Trade: ${max_trade_amount:,}
+            - Max Daily Loss: ${max_daily_loss:,}
+            - Stop Loss: {stop_loss_pct}%
+            - Profit Target: {profit_target_pct}%
+            """)
+            
+            # Save settings button
+            if st.button("💾 Save Risk Settings"):
+                # Update the trading configuration
+                TRADING_CONFIG["MAX_POSITION_SIZE"] = max_trade_amount
+                TRADING_CONFIG["MAX_DAILY_LOSS"] = max_daily_loss
+                TRADING_CONFIG["STOP_LOSS_PCT"] = stop_loss_pct
+                TRADING_CONFIG["PROFIT_TARGET_PCT"] = profit_target_pct
+                st.success("✅ Risk settings saved!")
+                st.rerun()
             
             # Cache controls
             col1, col2 = st.columns(2)
