@@ -1,11 +1,21 @@
-# API Keys and Sensitive Data
-config.json
+# Virtual Environment
+bin/
+include/
+lib/
+pyvenv.cfg
+share/
+
+# Environment Variables
 .env
+.env.local
+.env.production
+
+# Configuration files with sensitive data
+config.json
+config.json.backup
 *.key
 *.pem
 *.p12
-secrets/
-credentials/
 
 # Python
 __pycache__/
@@ -30,95 +40,60 @@ wheels/
 *.egg
 MANIFEST
 
-# Virtual Environment
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
-bin/
-lib/
-include/
+# Jupyter Notebook
+.ipynb_checkpoints
 
-# IDE
-.vscode/
+# PyCharm
 .idea/
-*.swp
-*.swo
-*~
 
-# OS
+# VS Code
+.vscode/
+
+# macOS
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
+.AppleDouble
+.LSOverride
+
+# Windows
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 
 # Logs
 *.log
 logs/
-log/
+trading_log.csv
 
 # Database
 *.db
 *.sqlite
 *.sqlite3
 
-# Cache
-.cache/
-cache/
-*.cache
-
 # Temporary files
 *.tmp
 *.temp
-temp/
-tmp/
+*.swp
+*.swo
+*~
 
-# Jupyter Notebook
-.ipynb_checkpoints
+# Test files
+test_*.py
+*_test.py
+test_*.txt
+test_*.json
 
-# pyenv
-.python-version
+# Cache
+.cache/
+.pytest_cache/
 
-# pipenv
-Pipfile.lock
+# Coverage
+.coverage
+htmlcov/
 
-# PEP 582
-__pypackages__/
+# Streamlit
+.streamlit/
 
-# Celery
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# Trading data
-trades/
-positions/
-backtest_results/
-
-# Market data cache
-market_data_cache/
-price_cache/ 
+# API Keys and Secrets (backup files)
+*_backup.json
+*_old.json
+secrets.json 
