@@ -310,4 +310,29 @@ def open_account_summary():
 
 def get_account_info() -> Dict:
     """Get Schwab account information"""
-    return trade_executor.get_account_info() 
+    return trade_executor.get_account_info()
+
+def complete_oauth_auth(redirect_url: str) -> bool:
+    """Complete OAuth authentication with provided redirect URL"""
+    try:
+        authenticator = SchwabAuthenticator()
+        
+        # Extract authorization code from URL
+        auth_code = authenticator._extract_auth_code(redirect_url)
+        if not auth_code:
+            logger.error("Could not extract authorization code from URL")
+            return False
+        
+        # Exchange authorization code for access token
+        success = authenticator._exchange_code_for_token(auth_code)
+        if success:
+            logger.info("OAuth authentication completed successfully")
+            authenticator._save_tokens()
+            return True
+        else:
+            logger.error("OAuth authentication failed")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error completing OAuth authentication: {e}")
+        return False 
