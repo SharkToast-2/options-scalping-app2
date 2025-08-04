@@ -781,10 +781,13 @@ class OptimizedOptionsScalpingDashboard:
         try:
             st.info("🔄 Starting Schwab OAuth2 authentication...")
             
+            # Automatically open the browser when OAuth starts
+            self._open_schwab_auth_page()
+            
             # Show OAuth instructions
             st.markdown("""
             **OAuth2 Authentication Steps:**
-            1. A browser window will open to Schwab's authorization page
+            1. ✅ Browser window opened to Schwab's authorization page
             2. Sign in to your Schwab account
             3. Authorize the application
             4. Copy the entire URL you're redirected to
@@ -818,8 +821,8 @@ class OptimizedOptionsScalpingDashboard:
                     else:
                         st.error("❌ Schwab OAuth2 authentication failed")
             
-            # Show manual OAuth start button
-            if st.button("🌐 Open Schwab Authorization Page"):
+            # Show manual OAuth start button as backup
+            if st.button("🌐 Reopen Schwab Authorization Page"):
                 self._open_schwab_auth_page()
                 
         except Exception as e:
@@ -829,18 +832,28 @@ class OptimizedOptionsScalpingDashboard:
         """Open Schwab authorization page"""
         try:
             import webbrowser
+            import platform
             
             # Schwab OAuth2 authorization URL
             auth_url = "https://api.schwabapi.com/v1/oauth/authorize?response_type=code&client_id=1wzwOrhivb2PkR1UCAUVTKYqC4MTNYlj&scope=readonly&redirect_uri=https://developer.schwab.com/oauth2-redirect.html"
             
-            # Open browser
-            webbrowser.open(auth_url)
+            # Try to open browser
+            success = webbrowser.open(auth_url)
             
-            st.success("🌐 Browser opened to Schwab authorization page!")
-            st.info("Please complete the authorization and paste the redirect URL above.")
+            if success:
+                st.success("🌐 Browser opened to Schwab authorization page!")
+                st.info("Please complete the authorization and paste the redirect URL above.")
+            else:
+                st.warning("⚠️ Could not automatically open browser")
+                st.info(f"Please manually visit: {auth_url}")
+                
+            # Also show the URL for manual copy/paste
+            st.code(auth_url, language="text")
             
         except Exception as e:
             st.error(f"❌ Error opening browser: {e}")
+            st.info("Please manually visit the Schwab authorization page")
+            st.code(auth_url, language="text")
     
     def _test_schwab_api(self):
         """Test Schwab API connection with API keys"""
