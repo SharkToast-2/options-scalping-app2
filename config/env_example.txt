@@ -1,0 +1,34 @@
+# API Keys for Options Scalping App
+# Copy this file to .env and fill in your actual API keys
+
+# Alpaca Trading API (Paper Trading)
+ALPACA_API_KEY=your_alpaca_api_key_here
+ALPACA_SECRET_KEY=your_alpaca_secret_key_here
+
+# News API for Sentiment Analysis
+NEWS_API_KEY=your_news_api_key_here
+
+# Alpha Vantage API (Optional - for additional market data)
+ALPHA_VANTAGE_API_KEY=your_alpha_vantage_api_key_here
+
+# Trading Configuration
+PAPER_TRADING=true
+MAX_POSITION_SIZE=1000
+PROFIT_TARGET_PCT=5.0
+STOP_LOSS_PCT=5.0
+
+# Risk Management
+MAX_DAILY_LOSS=500
+EMERGENCY_STOP=true
+
+# Account Balance Protection
+MIN_ACCOUNT_BALANCE=5000
+ACCOUNT_BALANCE_BUFFER=1000
+
+# Data Sources
+PRIMARY_DATA_SOURCE=alpaca
+FALLBACK_DATA_SOURCE=yfinance
+
+# Logging
+LOG_LEVEL=INFO
+ENABLE_TRADE_LOGGING=true 

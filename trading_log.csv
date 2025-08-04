@@ -1,0 +1,1 @@
+timestamp,symbol,option_type,strike_price,expiration,entry_price,exit_price,quantity,entry_time,exit_time,realized_pnl,unrealized_pnl,status,signal_strength,profit_target,stop_loss,exit_reason
