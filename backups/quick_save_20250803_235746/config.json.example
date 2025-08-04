@@ -1,0 +1,42 @@
+{
+  "api_keys": {
+    "schwab_market_data_key": "your_schwab_market_data_key_here",
+    "schwab_market_data_secret": "your_schwab_market_data_secret_here",
+    "schwab_trading_key": "your_schwab_trading_key_here",
+    "schwab_trading_secret": "your_schwab_trading_secret_here",
+    "alpaca_api_key": "your_alpaca_api_key_here",
+    "alpaca_secret_key": "your_alpaca_secret_key_here",
+    "news_api_key": "your_news_api_key_here",
+    "polygon_api_key": "your_polygon_api_key_here"
+  },
+  "schwab_auth": {
+    "client_id": "your_schwab_client_id_here",
+    "client_secret": "your_schwab_client_secret_here",
+    "redirect_uri": "https://developer.schwab.com/oauth2-redirect.html",
+    "auth_url": "https://api.schwabapi.com/v1/oauth/authorize",
+    "token_url": "https://api.schwabapi.com/v1/oauth/token",
+    "access_token": "",
+    "refresh_token": "",
+    "expires_in": 0,
+    "token_type": "",
+    "timestamp": "",
+    "status": "not_authenticated"
+  },
+  "settings": {
+    "default_symbols": ["AAPL", "GOOGL", "MSFT", "AMZN", "TSLA", "NVDA", "META", "NFLX", "AMD", "INTC"],
+    "risk_management": {
+      "max_position_size": 0.1,
+      "daily_loss_limit": 0.05,
+      "stop_loss_percentage": 0.02
+    },
+    "data_sources": {
+      "primary": "polygon",
+      "fallback": "yfinance",
+      "mock": true
+    },
+    "cache_settings": {
+      "duration": 300,
+      "max_size": 1000
+    }
+  }
+} 

@@ -154,16 +154,47 @@ class OptimizedOptionsScalpingDashboard:
                 st.write(f"**Alpaca API:** {'✅ Configured' if api_status['alpaca'] else '❌ Not configured'}")
                 st.write(f"**ThinkOrSwim API:** {'✅ Configured' if api_status['thinkorswim'] else '❌ Not configured'}")
                 
-                # Cache controls
-                col1, col2 = st.columns(2)
-                with col1:
-                    if st.button("🗑️ Clear Cache"):
-                        self.data_fetcher.clear_cache()
-                        self.indicators.clear_cache()
-                        st.success("Cache cleared!")
-                with col2:
-                    if st.button("🔄 Test Live Data"):
-                        self._test_live_data()
+                            # Trading Controls
+            st.subheader("🤖 Trading Controls")
+            
+            # Auto-trading toggle
+            auto_trading = st.checkbox(
+                "Enable Auto-Trading", 
+                value=st.session_state.get('auto_trading', False),
+                help="Enable automated trading based on signals"
+            )
+            st.session_state.auto_trading = auto_trading
+            
+            if auto_trading:
+                st.success("✅ Auto-trading enabled")
+                st.warning("⚠️ Real money trading is active!")
+            else:
+                st.info("📊 Manual mode - no trades will be executed")
+            
+            # Trading mode selection
+            trading_mode = st.selectbox(
+                "Trading Mode",
+                ["Paper Trading", "Live Trading"],
+                index=0 if TRADING_CONFIG.get("PAPER_TRADING", True) else 1,
+                help="Paper trading uses virtual money, live trading uses real money"
+            )
+            
+            if trading_mode == "Live Trading":
+                st.error("🚨 LIVE TRADING MODE - Real money will be used!")
+                confirm_live = st.checkbox("I understand and accept the risks")
+                if not confirm_live:
+                    st.stop()
+            
+            # Cache controls
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("🗑️ Clear Cache"):
+                    self.data_fetcher.clear_cache()
+                    self.indicators.clear_cache()
+                    st.success("Cache cleared!")
+            with col2:
+                if st.button("🔄 Test Live Data"):
+                    self._test_live_data()
     
     def _test_live_data(self):
         """Test live data with progress indicator"""
@@ -187,7 +218,7 @@ class OptimizedOptionsScalpingDashboard:
         """Run manual mode with optimized data loading"""
         # Create tabs for better organization
         tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-            "🚀 Mid-Cap Growth", 
+            "🚀 Large-Cap Growth", 
             "📊 Stock Rankings", 
             "📈 Real-time Data", 
             "🎯 Signal Analysis", 
@@ -196,7 +227,7 @@ class OptimizedOptionsScalpingDashboard:
         ])
         
         with tab1:
-            self.show_midcap_growth_stocks()
+            self.show_largecap_growth_stocks()
         
         with tab2:
             self.show_optimized_stock_rankings()
@@ -351,12 +382,12 @@ class OptimizedOptionsScalpingDashboard:
                     with col4:
                         st.metric("Signal", opp['signal_direction'])
     
-    def show_midcap_growth_stocks(self):
-        """Show top 10 mid-cap stocks with growth potential"""
-        st.header("🚀 Mid-Cap Growth Stocks")
-        st.markdown("**Top 10 mid-cap stocks with high growth potential over the next month**")
+    def show_largecap_growth_stocks(self):
+        """Show top 10 large-cap stocks with growth potential"""
+        st.header("🚀 Large-Cap Growth Stocks")
+        st.markdown("**Top 10 large-cap stocks with high growth potential over the next month**")
         st.markdown("""
-        This screener analyzes **185+ mid-cap stocks** using advanced technical indicators to identify 
+        This screener analyzes **300+ large-cap stocks** (S&P 500 and major companies) using advanced technical indicators to identify 
         stocks with the highest growth potential over the next 30 days.
         
         **Growth Score Components:**
@@ -368,33 +399,33 @@ class OptimizedOptionsScalpingDashboard:
         """)
         
         # Add refresh button
-        if st.button("🔄 Refresh Mid-Cap Analysis", key="refresh_midcap"):
+        if st.button("🔄 Refresh Large-Cap Analysis", key="refresh_largecap"):
             st.cache_data.clear()
             st.rerun()
         
-        # Get mid-cap stocks with caching
+        # Get large-cap stocks with caching
         @st.cache_data(ttl=300)  # Cache for 5 minutes
-        def get_cached_midcap_stocks(_self):
+        def get_cached_largecap_stocks(_self):
             try:
-                from data.midcap_screener import get_top_midcap_stocks
-                return get_top_midcap_stocks(_self.data_fetcher, max_workers=3)
+                from data.largecap_screener import get_top_largecap_stocks
+                return get_top_largecap_stocks(_self.data_fetcher, max_workers=3)
             except Exception as e:
-                st.error(f"Error fetching mid-cap stocks: {e}")
+                st.error(f"Error fetching large-cap stocks: {e}")
                 return []
         
-        with st.spinner("🔍 Analyzing mid-cap stocks for growth potential..."):
-            midcap_stocks = get_cached_midcap_stocks(self)
+        with st.spinner("🔍 Analyzing large-cap stocks for growth potential..."):
+            largecap_stocks = get_cached_largecap_stocks(self)
         
-        if not midcap_stocks:
-            st.warning("No mid-cap stocks found. This might be due to API rate limits.")
+        if not largecap_stocks:
+            st.warning("No large-cap stocks found. This might be due to API rate limits.")
             return
         
-        # Display mid-cap stocks in a table
+        # Display large-cap stocks in a table
         st.markdown("### 📈 Growth Potential Analysis")
         
         # Create DataFrame for display
         df_data = []
-        for stock in midcap_stocks:
+        for stock in largecap_stocks:
             df_data.append({
                 'Symbol': stock['symbol'],
                 'Price': f"${stock['price']:.2f}",
@@ -429,12 +460,12 @@ class OptimizedOptionsScalpingDashboard:
         st.markdown("### 🔍 Detailed Analysis")
         selected_stock = st.selectbox(
             "Select a stock for detailed analysis:",
-            options=[stock['symbol'] for stock in midcap_stocks],
-            key="midcap_detail_select"
+            options=[stock['symbol'] for stock in largecap_stocks],
+            key="largecap_detail_select"
         )
         
         if selected_stock:
-            selected_data = next((s for s in midcap_stocks if s['symbol'] == selected_stock), None)
+            selected_data = next((s for s in largecap_stocks if s['symbol'] == selected_stock), None)
             if selected_data:
                 col1, col2, col3 = st.columns(3)
                 
