@@ -4,6 +4,7 @@ Optimized Technical Indicators Module for Options Scalping Signals
 
 import pandas as pd
 import numpy as np
+import time
 from typing import Dict, List, Tuple, Optional
 import logging
 from functools import lru_cache
