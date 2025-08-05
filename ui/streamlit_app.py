@@ -925,11 +925,14 @@ class OptimizedOptionsScalpingDashboard:
             
             # Method 1: Try webbrowser module (most reliable)
             try:
+                st.info("🔍 Attempting to open browser with webbrowser module...")
                 success = webbrowser.open(auth_url)
                 if success:
                     st.success("🌐 Browser opened to Schwab authorization page!")
                     st.info("Please complete the authorization and paste the redirect URL above.")
                     return
+                else:
+                    st.warning("⚠️ webbrowser.open() returned False")
             except Exception as e:
                 st.warning(f"⚠️ webbrowser.open() failed: {e}")
             
@@ -937,6 +940,8 @@ class OptimizedOptionsScalpingDashboard:
             if not success:
                 try:
                     system = platform.system()
+                    st.info(f"🔍 Detected platform: {system}")
+                    
                     if system == "Darwin":  # macOS
                         subprocess.run(["open", auth_url], check=True, capture_output=True)
                         st.success("🌐 Browser opened using macOS 'open' command!")
@@ -949,6 +954,8 @@ class OptimizedOptionsScalpingDashboard:
                         subprocess.run(["xdg-open", auth_url], check=True, capture_output=True)
                         st.success("🌐 Browser opened using Linux 'xdg-open' command!")
                         success = True
+                    else:
+                        st.warning(f"⚠️ Unknown platform: {system}")
                 except (subprocess.CalledProcessError, FileNotFoundError) as e:
                     st.warning(f"⚠️ Platform-specific browser opening failed: {e}")
                 except Exception as e:
