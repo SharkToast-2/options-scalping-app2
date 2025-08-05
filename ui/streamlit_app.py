@@ -408,11 +408,11 @@ class OptimizedOptionsScalpingDashboard:
             indicators_data = {}
             current_prices = {}
             
-            # Use ThreadPoolExecutor for parallel processing
-            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            # Use ThreadPoolExecutor for parallel processing with reduced workers
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
                 # Submit all data fetching tasks
                 future_to_symbol = {}
-                for symbol in market_data.keys():
+                for symbol in list(market_data.keys())[:5]:  # Limit to 5 symbols
                     future = executor.submit(self._get_symbol_data, symbol)
                     future_to_symbol[future] = symbol
                 
@@ -426,7 +426,8 @@ class OptimizedOptionsScalpingDashboard:
                             indicators_data[symbol] = result['indicators']
                             current_prices[symbol] = result['current_price']
                     except Exception as e:
-                        st.error(f"Error processing {symbol}: {e}")
+                        st.warning(f"⚠️ Error processing {symbol}: {e}")
+                        # Continue with other symbols
             
             # Calculate rankings
             if stock_data and indicators_data:
@@ -446,14 +447,22 @@ class OptimizedOptionsScalpingDashboard:
             # Get stock data
             stock_data = self.get_cached_stock_data(symbol)
             if stock_data is None or stock_data.empty:
+                st.warning(f"⚠️ No stock data available for {symbol}")
                 return None
             
             # Get indicators
             indicators = self.get_cached_indicators(stock_data)
+            if not indicators:
+                st.warning(f"⚠️ No indicators available for {symbol}")
+                return None
             
             # Get current price
             quote = self.data_fetcher.get_real_time_quote(symbol)
             current_price = quote.get('price', 0) if quote else 0
+            
+            if current_price == 0:
+                st.warning(f"⚠️ No current price available for {symbol}")
+                return None
             
             return {
                 'stock_data': stock_data,
@@ -462,7 +471,7 @@ class OptimizedOptionsScalpingDashboard:
             }
             
         except Exception as e:
-            st.error(f"Error getting data for {symbol}: {e}")
+            st.warning(f"⚠️ Error getting data for {symbol}: {e}")
             return None
     
     def _display_rankings_table(self, rankings: List[Dict]):

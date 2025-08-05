@@ -230,10 +230,14 @@ class OptimizedDataFetcher:
                 quote = self._get_yfinance_quote(symbol)
             if not quote:
                 # Final fallback to mock data
-                from data.mock_data_provider import get_mock_quote
-                quote = get_mock_quote(symbol)
-                if quote:
-                    logger.warning(f"⚠️ No data from {self.data_source} for {symbol}, using mock data")
+                try:
+                    from data.mock_data import mock_data_provider
+                    quote = mock_data_provider.get_mock_quote(symbol)
+                    if quote:
+                        logger.warning(f"⚠️ No data from {self.data_source} for {symbol}, using mock data")
+                except Exception as e:
+                    logger.error(f"Error fetching data for {symbol}: {e}")
+                    quote = None
         
         # If no quote from primary source, fallback to mock data
         if not quote:
@@ -250,8 +254,11 @@ class OptimizedDataFetcher:
         """Get market data for multiple symbols efficiently"""
         results = {}
         
-        # Use ThreadPoolExecutor for parallel processing
-        with ThreadPoolExecutor(max_workers=min(len(symbols), 5)) as executor:
+        # Limit to smaller batch size to avoid overwhelming APIs
+        symbols = symbols[:5]  # Limit to 5 symbols at a time
+        
+        # Use ThreadPoolExecutor for parallel processing with reduced workers
+        with ThreadPoolExecutor(max_workers=2) as executor:
             # Submit all requests
             future_to_symbol = {
                 executor.submit(self.get_real_time_quote, symbol): symbol 
@@ -267,6 +274,15 @@ class OptimizedDataFetcher:
                         results[symbol] = quote
                 except Exception as e:
                     logger.error(f"Error fetching data for {symbol}: {e}")
+                    # Add mock data as fallback
+                    try:
+                        from data.mock_data import mock_data_provider
+                        mock_quote = mock_data_provider.get_mock_quote(symbol)
+                        if mock_quote:
+                            mock_quote['source'] = 'mock'
+                            results[symbol] = mock_quote
+                    except Exception as mock_error:
+                        logger.error(f"Error getting mock data for {symbol}: {mock_error}")
         
         return results
     
