@@ -970,9 +970,28 @@ class OptimizedOptionsScalpingDashboard:
                         st.success("🌐 Browser opened using Windows 'start' command!")
                         success = True
                     elif system == "Linux":
-                        subprocess.run(["xdg-open", auth_url], check=True, capture_output=True)
-                        st.success("🌐 Browser opened using Linux 'xdg-open' command!")
-                        success = True
+                        st.info("🐧 Detected Linux - trying multiple browser opening methods")
+                        
+                        # Try multiple Linux browser opening methods
+                        linux_methods = [
+                            ["xdg-open", auth_url],
+                            ["google-chrome", auth_url],
+                            ["firefox", auth_url],
+                            ["chromium-browser", auth_url],
+                            ["brave-browser", auth_url]
+                        ]
+                        
+                        for method in linux_methods:
+                            try:
+                                subprocess.run(method, check=True, capture_output=True)
+                                st.success(f"🌐 Browser opened using {' '.join(method)}!")
+                                success = True
+                                break
+                            except (subprocess.CalledProcessError, FileNotFoundError):
+                                continue
+                        
+                        if not success:
+                            st.warning("⚠️ All Linux browser methods failed")
                     else:
                         st.warning(f"⚠️ Unknown platform: {system}")
                         # Fallback: try macOS commands if we're unsure
@@ -1007,17 +1026,26 @@ class OptimizedOptionsScalpingDashboard:
                     except (subprocess.CalledProcessError, FileNotFoundError):
                         continue
             
-            # If all methods fail, show manual instructions
-            if not success:
-                st.warning("⚠️ Could not automatically open browser")
-                st.info("Please manually visit the Schwab authorization page")
-                
-            # Always show the URL for manual copy/paste
+            # Always show the URL and provide manual options
+            st.markdown("---")
             st.markdown("**🔗 Schwab Authorization URL:**")
             st.code(auth_url, language="text")
             
             # Add a clickable link
             st.markdown(f"[🌐 Click here to open Schwab Authorization Page]({auth_url})")
+            
+            # Show manual instructions
+            st.info("📋 **Manual Steps:**")
+            st.markdown("""
+            1. **Click the link above** to open the Schwab authorization page
+            2. **Sign in** to your Schwab account
+            3. **Authorize** the application
+            4. **Copy the entire URL** you're redirected to
+            5. **Paste it** in the input field above
+            """)
+            
+            if not success:
+                st.warning("⚠️ Automatic browser opening failed, but you can still complete the process manually")
             
         except Exception as e:
             st.error(f"❌ Error opening browser: {e}")
