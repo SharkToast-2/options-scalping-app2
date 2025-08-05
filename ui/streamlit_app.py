@@ -943,10 +943,22 @@ class OptimizedOptionsScalpingDashboard:
                     st.info(f"🔍 Detected platform: {system}")
                     
                     # Enhanced platform detection for macOS
+                    platform_info = platform.platform().lower()
+                    st.info(f"🔍 Platform info: {platform_info}")
+                    
                     is_macos = (system == "Darwin" or 
                                system == "macOS" or 
-                               "darwin" in platform.platform().lower() or
-                               "mac" in platform.platform().lower())
+                               "darwin" in platform_info or
+                               "mac" in platform_info or
+                               "darwin" in platform.machine().lower() or
+                               "mac" in platform.machine().lower())
+                    
+                    st.info(f"🔍 is_macos: {is_macos}")
+                    
+                    # Force macOS detection if we're on a Mac (additional check)
+                    if not is_macos and os.path.exists("/Applications"):
+                        st.info("🍎 Detected /Applications directory - forcing macOS detection")
+                        is_macos = True
                     
                     if is_macos:
                         st.info("🍎 Detected macOS - using 'open' command")
