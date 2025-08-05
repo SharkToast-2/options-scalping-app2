@@ -554,7 +554,7 @@ class OptimizedOptionsScalpingDashboard:
             else:
                 return 'background-color: #FFB6C1'  # Light red
         
-        styled_df = display_df.style.applymap(color_score, subset=['Score'])
+        styled_df = display_df.style.map(color_score, subset=['Score'])
         
         st.dataframe(styled_df, use_container_width=True)
         
@@ -923,46 +923,53 @@ class OptimizedOptionsScalpingDashboard:
             # Try multiple methods to open browser
             success = False
             
-            # Method 1: Try webbrowser module
+            # Method 1: Try webbrowser module (most reliable)
             try:
                 success = webbrowser.open(auth_url)
                 if success:
                     st.success("🌐 Browser opened to Schwab authorization page!")
                     st.info("Please complete the authorization and paste the redirect URL above.")
+                    return
             except Exception as e:
                 st.warning(f"⚠️ webbrowser.open() failed: {e}")
             
             # Method 2: Try platform-specific commands
             if not success:
                 try:
-                    if platform.system() == "Darwin":  # macOS
-                        subprocess.run(["open", auth_url], check=True)
+                    system = platform.system()
+                    if system == "Darwin":  # macOS
+                        subprocess.run(["open", auth_url], check=True, capture_output=True)
                         st.success("🌐 Browser opened using macOS 'open' command!")
                         success = True
-                    elif platform.system() == "Windows":
-                        subprocess.run(["start", auth_url], shell=True, check=True)
+                    elif system == "Windows":
+                        subprocess.run(["start", auth_url], shell=True, check=True, capture_output=True)
                         st.success("🌐 Browser opened using Windows 'start' command!")
                         success = True
-                    elif platform.system() == "Linux":
-                        subprocess.run(["xdg-open", auth_url], check=True)
+                    elif system == "Linux":
+                        subprocess.run(["xdg-open", auth_url], check=True, capture_output=True)
                         st.success("🌐 Browser opened using Linux 'xdg-open' command!")
                         success = True
+                except (subprocess.CalledProcessError, FileNotFoundError) as e:
+                    st.warning(f"⚠️ Platform-specific browser opening failed: {e}")
                 except Exception as e:
                     st.warning(f"⚠️ Platform-specific browser opening failed: {e}")
             
-            # Method 3: Try common browser executables
-            if not success:
+            # Method 3: Try common browser executables (macOS specific)
+            if not success and platform.system() == "Darwin":
                 browsers = [
-                    "google-chrome", "chrome", "firefox", "safari", 
-                    "microsoft-edge", "edge", "opera", "brave"
+                    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+                    "/Applications/Firefox.app/Contents/MacOS/firefox",
+                    "/Applications/Safari.app/Contents/MacOS/Safari",
+                    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"
                 ]
                 
                 for browser in browsers:
                     try:
-                        subprocess.run([browser, auth_url], check=True)
-                        st.success(f"🌐 Browser opened using {browser}!")
-                        success = True
-                        break
+                        if os.path.exists(browser):
+                            subprocess.run([browser, auth_url], check=True, capture_output=True)
+                            st.success(f"🌐 Browser opened using {os.path.basename(browser)}!")
+                            success = True
+                            break
                     except (subprocess.CalledProcessError, FileNotFoundError):
                         continue
             
