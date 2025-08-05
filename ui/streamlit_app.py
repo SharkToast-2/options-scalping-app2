@@ -942,7 +942,14 @@ class OptimizedOptionsScalpingDashboard:
                     system = platform.system()
                     st.info(f"🔍 Detected platform: {system}")
                     
-                    if system == "Darwin":  # macOS
+                    # Enhanced platform detection for macOS
+                    is_macos = (system == "Darwin" or 
+                               system == "macOS" or 
+                               "darwin" in platform.platform().lower() or
+                               "mac" in platform.platform().lower())
+                    
+                    if is_macos:
+                        st.info("🍎 Detected macOS - using 'open' command")
                         subprocess.run(["open", auth_url], check=True, capture_output=True)
                         st.success("🌐 Browser opened using macOS 'open' command!")
                         success = True
@@ -956,6 +963,14 @@ class OptimizedOptionsScalpingDashboard:
                         success = True
                     else:
                         st.warning(f"⚠️ Unknown platform: {system}")
+                        # Fallback: try macOS commands if we're unsure
+                        try:
+                            st.info("🔄 Trying macOS fallback...")
+                            subprocess.run(["open", auth_url], check=True, capture_output=True)
+                            st.success("🌐 Browser opened using macOS fallback!")
+                            success = True
+                        except:
+                            st.warning("⚠️ macOS fallback also failed")
                 except (subprocess.CalledProcessError, FileNotFoundError) as e:
                     st.warning(f"⚠️ Platform-specific browser opening failed: {e}")
                 except Exception as e:
