@@ -944,21 +944,40 @@ class OptimizedOptionsScalpingDashboard:
                     
                     # Enhanced platform detection for macOS
                     platform_info = platform.platform().lower()
+                    machine_info = platform.machine().lower()
+                    processor_info = platform.processor().lower()
+                    
                     st.info(f"🔍 Platform info: {platform_info}")
+                    st.info(f"🔍 Machine info: {machine_info}")
+                    st.info(f"🔍 Processor info: {processor_info}")
+                    st.info(f"🔍 System: {system}")
+                    
+                    # Check for macOS indicators
+                    has_applications = os.path.exists("/Applications")
+                    has_system = os.path.exists("/System")
+                    has_users = os.path.exists("/Users")
+                    
+                    st.info(f"🔍 /Applications exists: {has_applications}")
+                    st.info(f"🔍 /System exists: {has_system}")
+                    st.info(f"🔍 /Users exists: {has_users}")
                     
                     is_macos = (system == "Darwin" or 
                                system == "macOS" or 
                                "darwin" in platform_info or
                                "mac" in platform_info or
-                               "darwin" in platform.machine().lower() or
-                               "mac" in platform.machine().lower())
+                               "darwin" in machine_info or
+                               "mac" in machine_info or
+                               "darwin" in processor_info or
+                               "mac" in processor_info)
                     
-                    st.info(f"🔍 is_macos: {is_macos}")
+                    st.info(f"🔍 is_macos (before fallback): {is_macos}")
                     
                     # Force macOS detection if we're on a Mac (additional check)
-                    if not is_macos and os.path.exists("/Applications"):
-                        st.info("🍎 Detected /Applications directory - forcing macOS detection")
+                    if not is_macos and (has_applications or has_system):
+                        st.info("🍎 Detected macOS file system - forcing macOS detection")
                         is_macos = True
+                    
+                    st.info(f"🔍 Final is_macos: {is_macos}")
                     
                     if is_macos:
                         st.info("🍎 Detected macOS - using 'open' command")
