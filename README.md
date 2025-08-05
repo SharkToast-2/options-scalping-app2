@@ -1,381 +1,315 @@
-# 🚀 Options Scalping Application
+# 📈 Options Scalping Bot (Automated with Schwab API)
 
-A comprehensive real-time options scalping and stock analysis platform built with Streamlit, featuring advanced technical indicators, mid-cap stock screening, and multi-source market data integration.
+This is a real-time momentum-based options scalping bot built with Python. It uses technical indicators, sentiment filters, and Schwab API integration to automatically detect short-term trade opportunities and execute them securely.
 
-![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)
-![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red.svg)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
+---
 
-## 🌟 Features
+## 🚀 Features
 
-### 📊 **Real-Time Market Data**
-- **Polygon.io Integration**: Primary data source for real-time quotes and historical data
-- **Multi-Source Fallback**: Automatic fallback to yfinance and mock data
-- **Rate Limit Handling**: Intelligent rate limiting with exponential backoff
-- **Caching System**: Optimized caching for performance
+- ✅ Trades options for high-volume tickers (e.g., $META, $AAPL, $TSLA)
+- ✅ One trade at a time, up to **$500 per trade**
+- ✅ Stops trading if daily loss hits **$500 max**
+- ✅ Closes trades on **3–5% gain or loss**
+- ✅ Securely integrates with Schwab API using OAuth2
+- ✅ Saves and refreshes tokens automatically
+- ✅ Designed for low-latency 1-minute scalping
+- ✅ Modular, beginner-friendly codebase (Python 3.9+)
+- ✅ Real-time Streamlit dashboard for monitoring
+- ✅ Comprehensive logging and performance tracking
 
-### 🎯 **Mid-Cap Stock Screener**
-- **185+ Mid-Cap Stocks**: Comprehensive analysis of growth potential
-- **Technical Indicators**: RSI, MACD, Volume Analysis, Price Momentum, Bollinger Bands
-- **Growth Scoring**: Weighted algorithm for growth potential assessment
-- **Real-Time Updates**: Live data with refresh capabilities
+---
 
-### 📈 **Technical Analysis**
-- **Advanced Indicators**: RSI, MACD, VWAP, EMA, Bollinger Bands, ADX, OBV, ATR, Stochastic RSI
-- **Signal Generation**: Automated trading signals based on technical analysis
-- **Performance Metrics**: Real-time performance tracking and analysis
-- **Risk Management**: Built-in risk controls and position sizing
-
-### 🤖 **Trading Integration**
-- **Schwab API**: Full integration with Schwab trading platform
-- **Alpaca Trading**: Alternative trading platform support
-- **ThinkOrSwim**: TOS platform integration
-- **Paper Trading**: Safe testing environment
-
-### 🎨 **Modern UI/UX**
-- **Streamlit Dashboard**: Beautiful, responsive web interface
-- **Real-Time Updates**: Live data streaming and updates
-- **Interactive Charts**: Plotly-powered interactive visualizations
-- **Mobile Responsive**: Works on all devices
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Python 3.9+
-- Git
-- API Keys (Polygon.io, Schwab, etc.)
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/options-scalping-app.git
-   cd options-scalping-app
-   ```
-
-2. **Create virtual environment**
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Configure API keys**
-   ```bash
-   cp config.json.example config.json
-   # Edit config.json with your API keys
-   ```
-
-5. **Run the application**
-   ```bash
-   streamlit run ui/streamlit_app.py
-   ```
-
-## 📋 Configuration
-
-### API Keys Setup
-
-1. **Polygon.io** (Primary data source)
-   - Sign up at [polygon.io](https://polygon.io)
-   - Get your API key
-   - Add to `config.json`
-
-2. **Schwab Trading** (Optional)
-   - Register at [Schwab Developer Portal](https://developer.schwab.com)
-   - Get client ID and secret
-   - Configure OAuth2 authentication
-
-3. **Alpaca Trading** (Optional)
-   - Sign up at [alpaca.markets](https://alpaca.markets)
-   - Get API key and secret
-   - Add to `config.json`
-
-### Environment Variables
-
-Create a `.env` file or use Streamlit Cloud secrets:
-
-```bash
-POLYGON_API_KEY=your_polygon_key_here
-SCHWAB_CLIENT_ID=your_schwab_client_id
-SCHWAB_CLIENT_SECRET=your_schwab_secret
-ALPACA_API_KEY=your_alpaca_key
-ALPACA_SECRET_KEY=your_alpaca_secret
-```
-
-## 🎯 Usage
-
-### 1. **Mid-Cap Growth Screener**
-- Navigate to the "🚀 Mid-Cap Growth" tab
-- View top 10 mid-cap stocks with growth potential
-- Analyze technical indicators and growth scores
-- Refresh data for latest analysis
-
-### 2. **Real-Time Market Data**
-- Select stocks from the dropdown
-- View live prices, volume, and technical indicators
-- Monitor price changes and trends
-- Export data for further analysis
-
-### 3. **Technical Analysis**
-- Choose stocks for detailed analysis
-- View multiple technical indicators
-- Generate trading signals
-- Analyze historical performance
-
-### 4. **Trading Signals**
-- Review automated trading signals
-- Set risk management parameters
-- Monitor portfolio performance
-- Execute trades (with proper authentication)
-
-## 📊 Features in Detail
-
-### Mid-Cap Stock Screener
-
-The screener analyzes 185+ mid-cap stocks using a weighted scoring system:
-
-- **RSI (25%)**: Relative Strength Index for momentum analysis
-- **MACD (25%)**: Moving Average Convergence Divergence for trend analysis
-- **Volume Analysis (20%)**: Volume ratio and market interest
-- **Price Momentum (20%)**: 20-day price momentum analysis
-- **Bollinger Bands (10%)**: Volatility and price position analysis
-
-### Technical Indicators
-
-- **RSI**: Relative Strength Index (14-period)
-- **MACD**: Moving Average Convergence Divergence
-- **VWAP**: Volume Weighted Average Price
-- **EMA**: Exponential Moving Averages (12, 26 periods)
-- **Bollinger Bands**: 20-period with 2 standard deviations
-- **ADX**: Average Directional Index
-- **OBV**: On-Balance Volume
-- **ATR**: Average True Range
-- **Stochastic RSI**: Stochastic Relative Strength Index
-
-### Risk Management
-
-- **Position Sizing**: Maximum 10% of portfolio per position
-- **Daily Loss Limits**: 5% maximum daily loss
-- **Stop Loss**: 2% automatic stop loss
-- **Portfolio Monitoring**: Real-time risk assessment
-
-## 🚀 Deployment
-
-### Streamlit Community Cloud
-
-1. **Push to GitHub**
-   ```bash
-   git add .
-   git commit -m "Initial commit"
-   git push origin main
-   ```
-
-2. **Deploy to Streamlit Cloud**
-   - Visit [share.streamlit.io](https://share.streamlit.io)
-   - Connect your GitHub repository
-   - Set main file: `ui/streamlit_app.py`
-   - Add secrets in the dashboard
-
-3. **Configure Secrets**
-   ```toml
-   [api_keys]
-   polygon_api_key = "your_polygon_key_here"
-   schwab_trading_key = "your_schwab_key_here"
-   schwab_trading_secret = "your_schwab_secret_here"
-   ```
-
-### Local Development
-
-```bash
-# Run with debug mode
-streamlit run ui/streamlit_app.py --logger.level debug
-
-# Run on specific port
-streamlit run ui/streamlit_app.py --server.port 8502
-```
-
-## 📁 Project Structure
+## 📂 Project Structure
 
 ```
 options_scalping_project/
-├── ui/
-│   └── streamlit_app.py          # Main Streamlit application
-├── data/
-│   ├── data_fetcher.py           # Multi-source data fetching
-│   ├── polygon_data.py           # Polygon.io integration
-│   ├── midcap_screener.py        # Mid-cap stock analysis
-│   └── mock_data.py              # Mock data fallback
-├── modules/
-│   └── trade_executor.py         # Trading execution logic
-├── signals/
-│   └── technical_indicators.py   # Technical analysis
-├── trading/
-│   └── risk_manager.py           # Risk management
-├── utils/
-│   └── logger.py                 # Logging utilities
+├── app.py                     # Main Streamlit dashboard
+├── bot.py                     # Automated trading bot
 ├── config/
-│   └── settings.py               # Configuration management
-├── requirements.txt              # Python dependencies
-├── config.json.example           # Example configuration
-├── .gitignore                    # Git ignore rules
-└── README.md                     # This file
+│   └── env_config.py         # Environment configuration
+├── data/
+│   └── market_data.py        # Market data fetching
+├── modules/
+│   └── schwab_auth.py        # Schwab authentication
+├── signals/
+│   ├── technical_indicators.py # Technical analysis
+│   └── sentiment_analysis.py   # Sentiment analysis
+├── utils/
+│   └── logger.py             # Logging utilities
+├── requirements.txt          # Dependencies
+├── schwab_backup.json        # Schwab credentials backup
+└── README.md                # This file
 ```
 
-## 🔧 API Integration
+---
 
-### Polygon.io
-- **Real-time quotes**: Latest trade data
-- **Historical data**: OHLCV data for technical analysis
-- **Rate limiting**: 5 requests/minute (free tier)
-- **Fallback**: Automatic fallback to yfinance
+## 🛠️ Quick Start
 
-### Schwab Trading
-- **OAuth2 Authentication**: Secure API access
-- **Real-time quotes**: Live market data
-- **Order execution**: Buy/sell orders
-- **Account management**: Portfolio tracking
+### Prerequisites
+- Python 3.9+
+- Schwab API credentials
+- Internet connection for real-time data
 
-### Alpaca Trading
-- **Paper trading**: Risk-free testing
-- **Real-time data**: Live market feeds
-- **Order management**: Advanced order types
-- **Portfolio tracking**: Real-time positions
+### Installation
 
-## 🛠️ Development
-
-### Adding New Features
-
-1. **Create feature branch**
+1. **Clone and setup:**
    ```bash
-   git checkout -b feature/new-feature
+   git clone <repository>
+   cd options_scalping_project
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
    ```
 
-2. **Implement changes**
-   - Follow PEP 8 coding standards
-   - Add proper error handling
-   - Include logging for debugging
+2. **Configure Schwab API:**
+   - Your credentials are already configured in `config/env_config.py`
+   - Use the authentication interface in the dashboard
 
-3. **Test thoroughly**
+3. **Run the dashboard:**
    ```bash
-   # Test data fetching
-   python -c "from data.data_fetcher import OptimizedDataFetcher; print('OK')"
-   
-   # Test Streamlit app
-   streamlit run ui/streamlit_app.py
+   streamlit run app.py
+   ```
+   - Open: http://localhost:8501 (or 8502 if 8501 is busy)
+
+4. **Run the bot (optional):**
+   ```bash
+   python3 bot.py
    ```
 
-4. **Submit pull request**
-   - Include detailed description
-   - Add screenshots if UI changes
-   - Update documentation
+---
 
-### Code Style
+## 📊 Dashboard Features
 
-- **Python**: Follow PEP 8 standards
-- **Streamlit**: Use proper caching and state management
-- **Error Handling**: Comprehensive try-catch blocks
-- **Logging**: Use structured logging throughout
+### Real-time Monitoring
+- **Market Data Tab**: Live prices, volume, and technical indicators
+- **Analysis Tab**: Interactive charts with RSI, MACD, Bollinger Bands
+- **Signals Tab**: Automated trading signals with confidence scores
+- **Schwab Auth Tab**: OAuth2 authentication and API key management
 
-## 📈 Performance Optimization
+### Interactive Controls
+- Symbol selection (META, AAPL, TSLA, NVDA, SPY, QQQ)
+- Time period adjustment (1d to 1y)
+- Real-time data refresh
+- Manual authentication setup
 
-### Caching Strategy
-- **Data caching**: 5-minute cache for market data
-- **Indicator caching**: 10-minute cache for technical indicators
-- **Streamlit caching**: Optimized with `@st.cache_data`
+---
 
-### Rate Limiting
-- **Polygon.io**: 1-second delay between requests
-- **yfinance**: Exponential backoff on rate limits
-- **Fallback systems**: Automatic data source switching
+## 🤖 Bot Features
 
-### Memory Management
-- **Data cleanup**: Automatic cleanup of old cache entries
-- **Streamlit optimization**: Efficient data structures
-- **Background processing**: Async operations for heavy tasks
+### Automated Trading
+- **Continuous Monitoring**: Scans markets every minute
+- **Signal Generation**: Combines technical and sentiment analysis
+- **Risk Management**: Position sizing and stop losses
+- **Performance Tracking**: Win rate, P&L, trade history
 
-## 🔒 Security
+### Trading Strategy
+- **Entry Conditions**:
+  - RSI < 30 (oversold)
+  - MACD bullish crossover
+  - Price below lower Bollinger Band
+  - Volume > 1.5x average
+  - Positive sentiment score
 
-### API Key Protection
-- **Environment variables**: Secure key storage
-- **Git ignore**: Sensitive files excluded from version control
-- **Streamlit secrets**: Cloud deployment security
+- **Exit Conditions**:
+  - 3-5% profit target
+  - 3-5% stop loss
+  - 5-minute time limit
+  - Signal reversal
 
-### Data Privacy
-- **No sensitive storage**: No personal data stored
-- **Encrypted connections**: HTTPS for all API calls
-- **Access controls**: Proper authentication required
+### Risk Management
+- **Position Sizing**: Maximum $500 per trade
+- **Daily Limits**: $500 maximum daily loss
+- **Stop Losses**: Automatic 3-5% stops
+- **One Trade at a Time**: Prevents overexposure
 
-## 🐛 Troubleshooting
+---
 
-### Common Issues
+## 🔐 Schwab API Integration
 
-1. **API Rate Limits**
-   - Solution: App automatically falls back to mock data
-   - Check: API key validity and usage limits
+### Authentication Flow
+1. **OAuth2 Authorization**: Secure token-based authentication
+2. **Token Management**: Automatic refresh and storage
+3. **API Endpoints**: Real-time quotes, order placement, account info
+4. **Error Handling**: Graceful fallbacks and retry logic
 
-2. **Import Errors**
-   - Solution: Install all dependencies from `requirements.txt`
-   - Check: Python version compatibility
+### Current Status
+- ✅ **Credentials Configured**: All API keys and secrets loaded
+- ✅ **OAuth2 URLs**: Authorization and token endpoints set
+- ✅ **Authentication Interface**: Manual and automatic auth options
+- 🔄 **Order Execution**: Simulated (ready for live trading)
 
-3. **Streamlit Caching Issues**
-   - Solution: Clear cache with `st.cache_data.clear()`
-   - Check: Method signatures and parameters
+### API Endpoints Used
+- `/oauth/authorize` - Authentication
+- `/oauth/token` - Token exchange
+- `/trading/v1/accounts` - Account information
+- `/trading/v1/orders` - Order placement
+- `/marketdata/v1/quotes` - Real-time quotes
 
-4. **Data Not Loading**
-   - Solution: Check API keys and network connection
-   - Check: Fallback to mock data is working
+---
 
-### Debug Mode
+## 📈 Technical Indicators
 
-```bash
-# Run with debug logging
-streamlit run ui/streamlit_app.py --logger.level debug
+### Core Indicators
+- **RSI (14)**: Momentum oscillator (0-100)
+- **MACD (12,26,9)**: Trend following with signal line
+- **Bollinger Bands (20,2)**: Volatility and price position
+- **Moving Averages**: SMA 20/50, EMA 12/26
+- **Volume Analysis**: Volume SMA and ratio
+- **ATR (14)**: Average True Range for volatility
+- **VWAP**: Volume Weighted Average Price
 
-# Check API connections
-python -c "from data.data_fetcher import OptimizedDataFetcher; df = OptimizedDataFetcher(); print(df.get_data_source_info())"
-```
+### Signal Generation
+- **Buy Signals**: RSI oversold, MACD bullish, price below BB
+- **Sell Signals**: RSI overbought, MACD bearish, price above BB
+- **Confidence Scoring**: Weighted combination of indicators
+- **Volume Confirmation**: High volume validates signals
+
+---
+
+## 🎯 Target Tickers
+
+### High-Volume Options
+- **META**: Meta Platforms (Facebook)
+- **AAPL**: Apple Inc.
+- **TSLA**: Tesla Inc.
+- **NVDA**: NVIDIA Corporation
+- **SPY**: SPDR S&P 500 ETF
+- **QQQ**: Invesco QQQ Trust
+
+### Selection Criteria
+- High daily volume (>10M shares)
+- Liquid options chains
+- Volatility suitable for scalping
+- Strong technical patterns
+
+---
+
+## 📊 Performance Tracking
+
+### Metrics Tracked
+- **Win/Loss Ratio**: Percentage of profitable trades
+- **Average P&L**: Mean profit per trade
+- **Maximum Drawdown**: Largest peak-to-trough decline
+- **Sharpe Ratio**: Risk-adjusted returns
+- **Daily P&L**: Real-time profit/loss tracking
+
+### Logging System
+- **Trade Logs**: Complete trade history
+- **Signal Logs**: All trading signals
+- **Error Logs**: Exception tracking
+- **Performance Logs**: Daily summaries
+
+---
+
+## 🛡️ Safety Features
+
+### Paper Trading Mode
+- **Risk-Free Testing**: No real money involved
+- **Full Functionality**: All features available
+- **Performance Validation**: Test strategies safely
+
+### Emergency Controls
+- **Emergency Stop**: Instant shutdown capability
+- **Position Limits**: Maximum exposure controls
+- **Daily Loss Limits**: Automatic shutdown on limits
+- **Error Recovery**: Graceful failure handling
+
+### Risk Controls
+- **Position Sizing**: Dynamic based on volatility
+- **Stop Losses**: Automatic exit on losses
+- **Time Limits**: Maximum trade duration
+- **Signal Validation**: Multiple confirmation sources
+
+---
+
+## 🚨 Current Status
+
+### ✅ Working Features
+- **Dashboard**: Fully functional on http://localhost:8502
+- **Market Data**: Real-time quotes via Yahoo Finance
+- **Technical Analysis**: All indicators calculated
+- **Schwab Auth**: OAuth2 interface ready
+- **Bot Framework**: Complete trading logic
+- **Logging**: Comprehensive audit trail
+
+### 🔄 In Development
+- **Live Trading**: Order execution simulation
+- **Options Chains**: Options-specific data
+- **Advanced Signals**: Machine learning integration
+- **Backtesting**: Historical performance analysis
+
+### 📋 Next Steps
+1. **Test Authentication**: Complete Schwab OAuth2 flow
+2. **Paper Trading**: Run bot in simulation mode
+3. **Performance Analysis**: Monitor and optimize signals
+4. **Live Trading**: Enable real order placement
+
+---
+
+## ⚠️ Disclaimer
+
+This bot is for **educational and research purposes**. Trading options involves substantial risk of loss. Always:
+
+- **Test thoroughly** in paper trading mode
+- **Start with small amounts** when going live
+- **Monitor performance** closely
+- **Understand the risks** involved
+- **Consult a financial advisor** before live trading
+
+**Past performance does not guarantee future results.**
+
+---
+
+## 🤝 Contributing
+
+1. **Fork the repository**
+2. **Create a feature branch**
+3. **Make your changes**
+4. **Test thoroughly**
+5. **Submit a pull request**
+
+### Development Guidelines
+- Follow PEP 8 coding standards
+- Add proper error handling
+- Include comprehensive logging
+- Test all new features
+- Update documentation
+
+---
 
 ## 📞 Support
 
 ### Getting Help
-- **GitHub Issues**: Report bugs and feature requests
-- **Documentation**: Check `DEPLOYMENT.md` and `CURRENT_STATUS.md`
-- **Community**: Join our Discord/Telegram for support
+- **Check Logs**: Review error messages in log files
+- **Verify Configuration**: Ensure API keys are correct
+- **Test Connectivity**: Check internet and API access
+- **Review Documentation**: Check this README and code comments
 
-### Contributing
-1. Fork the repository
-2. Create feature branch
-3. Make changes
-4. Add tests
-5. Submit pull request
+### Common Issues
+- **Import Errors**: Install all dependencies from `requirements.txt`
+- **API Errors**: Verify Schwab credentials and authentication
+- **Data Issues**: Check Yahoo Finance connectivity
+- **Performance Issues**: Monitor system resources
+
+---
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+---
+
 ## 🙏 Acknowledgments
 
-- **Polygon.io**: Real-time market data
+- **Schwab**: Trading platform and API
+- **Yahoo Finance**: Market data provider
 - **Streamlit**: Web application framework
-- **yfinance**: Financial data library
+- **Pandas/NumPy**: Data analysis libraries
 - **Plotly**: Interactive visualizations
-- **Pandas**: Data manipulation
-
-## 📊 Current Status
-
-- ✅ **Real-time data**: Polygon.io integration working
-- ✅ **Mid-cap screener**: 185+ stocks analyzed
-- ✅ **Technical indicators**: All indicators implemented
-- ✅ **Trading integration**: Schwab API configured
-- ✅ **Performance optimization**: Caching and async processing
-- ✅ **Deployment ready**: Streamlit Cloud compatible
 
 ---
 
-**Happy Trading! 🚀📈**
+**Happy Scalping! 🚀📈**
 
-*Disclaimer: This application is for educational and research purposes. Always do your own research and consider consulting with a financial advisor before making investment decisions.* 
+*Last Updated: January 2025*
+*Version: 1.0.0* 

@@ -1,593 +1,245 @@
+#!/usr/bin/env python3
 """
-Optimized Technical Indicators Module for Options Scalping Signals
+Technical Indicators for Options Scalping Bot
 """
 
 import pandas as pd
 import numpy as np
-import time
-from typing import Dict, List, Tuple, Optional
-import logging
-from functools import lru_cache
-from ta.trend import MACD, ADXIndicator, EMAIndicator
-from ta.momentum import RSIIndicator, StochasticOscillator
-from ta.volatility import BollingerBands
-from ta.volume import OnBalanceVolumeIndicator
-from ta.volatility import AverageTrueRange
+from typing import Dict, Optional
 
-from config.settings import INDICATOR_CONFIG
-
-logger = logging.getLogger(__name__)
-
-class OptimizedTechnicalIndicators:
-    """Optimized technical indicators calculator with caching and vectorized operations"""
-    
+class TechnicalIndicators:
     def __init__(self):
-        self.config = INDICATOR_CONFIG
-        self._indicator_cache = {}
-        self._cache_timestamps = {}
-        self.cache_duration = 300  # 5 minutes
+        """Initialize technical indicators calculator"""
+        pass
     
-    def _check_cache(self, key: str, data_hash: str) -> Optional[Dict]:
-        """Check if indicators are cached for this data"""
-        if key in self._indicator_cache:
-            cached_data = self._indicator_cache[key]
-            if (cached_data.get('data_hash') == data_hash and 
-                time.time() - cached_data.get('timestamp', 0) < self.cache_duration):
-                return cached_data.get('indicators')
-        return None
-    
-    def _update_cache(self, key: str, data_hash: str, indicators: Dict):
-        """Update cache with calculated indicators"""
-        self._indicator_cache[key] = {
-            'indicators': indicators,
-            'data_hash': data_hash,
-            'timestamp': time.time()
-        }
-    
-    def _get_data_hash(self, data: pd.DataFrame) -> str:
-        """Generate hash for data to check if cache is valid"""
-        return str(hash(str(data.tail(10).values.tobytes())))
-    
-    @lru_cache(maxsize=50)
-    def calculate_all_indicators(self, data_key: str) -> Dict[str, pd.Series]:
-        """Calculate all technical indicators with caching"""
-        # This is a simplified version - in practice, you'd pass the actual data
-        # and use the data hash for caching
-        return self._calculate_indicators_vectorized(data_key)
-    
-    def _calculate_indicators_vectorized(self, data: pd.DataFrame) -> Dict[str, pd.Series]:
-        """Calculate indicators using vectorized operations for better performance"""
+    def calculate_all_indicators(self, data: pd.DataFrame) -> Dict:
+        """Calculate all technical indicators for a dataset"""
+        if data is None or data.empty:
+            return {}
+        
         try:
             indicators = {}
             
-            # Vectorized calculations for better performance
-            close = data['Close']
-            high = data['High']
-            low = data['Low']
-            volume = data['Volume']
+            # Basic price data
+            indicators['current_price'] = data['Close'].iloc[-1]
+            indicators['open_price'] = data['Open'].iloc[-1]
+            indicators['high_price'] = data['High'].iloc[-1]
+            indicators['low_price'] = data['Low'].iloc[-1]
             
-            # Core indicators (vectorized)
-            indicators['rsi'] = self._calculate_rsi_vectorized(close)
-            indicators['macd'] = self._calculate_macd_vectorized(close)
-            indicators['vwap'] = self._calculate_vwap_vectorized(high, low, close, volume)
-            indicators['ema_trend'] = self._calculate_ema_trend_vectorized(close)
-            indicators['bb_width'] = self._calculate_bollinger_vectorized(close)
-            indicators['adx'] = self._calculate_adx_vectorized(high, low, close)
+            # RSI
+            indicators['rsi'] = self.calculate_rsi(data['Close'])
             
-            # Enhanced indicators
-            indicators['obv'] = self._calculate_obv_vectorized(close, volume)
-            indicators['atr'] = self._calculate_atr_vectorized(high, low, close)
-            indicators['stoch_rsi'] = self._calculate_stoch_rsi_vectorized(close)
+            # MACD
+            macd_data = self.calculate_macd(data['Close'])
+            indicators['macd'] = macd_data['macd']
+            indicators['macd_signal'] = macd_data['signal']
+            indicators['macd_histogram'] = macd_data['histogram']
+            
+            # Moving Averages
+            indicators['sma_20'] = self.calculate_sma(data['Close'], 20)
+            indicators['sma_50'] = self.calculate_sma(data['Close'], 50)
+            indicators['ema_12'] = self.calculate_ema(data['Close'], 12)
+            indicators['ema_26'] = self.calculate_ema(data['Close'], 26)
+            
+            # Bollinger Bands
+            bb_data = self.calculate_bollinger_bands(data['Close'])
+            indicators['bb_upper'] = bb_data['upper']
+            indicators['bb_middle'] = bb_data['middle']
+            indicators['bb_lower'] = bb_data['lower']
+            indicators['bb_width'] = bb_data['width']
+            
+            # Volume indicators
+            indicators['volume_sma'] = self.calculate_volume_sma(data)
+            indicators['volume_ratio'] = self.calculate_volume_ratio(data)
+            
+            # ATR for volatility
+            indicators['atr'] = self.calculate_atr(data)
+            
+            # VWAP
+            indicators['vwap'] = self.calculate_vwap(data)
             
             return indicators
             
         except Exception as e:
-            logger.error(f"Error calculating indicators: {e}")
+            print(f"Error calculating indicators: {e}")
             return {}
     
-    def _calculate_rsi_vectorized(self, close: pd.Series, period: int = 14) -> pd.Series:
-        """Vectorized RSI calculation"""
+    def calculate_rsi(self, prices: pd.Series, period: int = 14) -> float:
+        """Calculate Relative Strength Index"""
         try:
-            delta = close.diff()
+            delta = prices.diff()
             gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
             loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
             rs = gain / loss
             rsi = 100 - (100 / (1 + rs))
-            return rsi
-        except Exception as e:
-            logger.error(f"Error calculating RSI: {e}")
-            return pd.Series(dtype=float)
+            return rsi.iloc[-1] if not rsi.empty else 50
+        except Exception:
+            return 50
     
-    def _calculate_macd_vectorized(self, close: pd.Series) -> Dict[str, pd.Series]:
-        """Vectorized MACD calculation"""
+    def calculate_macd(self, prices: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> Dict:
+        """Calculate MACD (Moving Average Convergence Divergence)"""
         try:
-            fast_period = self.config['MACD']['FAST_PERIOD']
-            slow_period = self.config['MACD']['SLOW_PERIOD']
-            signal_period = self.config['MACD']['SIGNAL_PERIOD']
-            
-            ema_fast = close.ewm(span=fast_period).mean()
-            ema_slow = close.ewm(span=slow_period).mean()
+            ema_fast = self.calculate_ema(prices, fast)
+            ema_slow = self.calculate_ema(prices, slow)
             macd_line = ema_fast - ema_slow
-            signal_line = macd_line.ewm(span=signal_period).mean()
-            macd_histogram = macd_line - signal_line
+            
+            # Calculate signal line (EMA of MACD)
+            macd_series = prices.ewm(span=fast).mean() - prices.ewm(span=slow).mean()
+            signal_line = macd_series.ewm(span=signal).mean()
             
             return {
                 'macd': macd_line,
-                'macd_signal': signal_line,
-                'macd_diff': macd_histogram
+                'signal': signal_line.iloc[-1] if not signal_line.empty else 0,
+                'histogram': macd_line - signal_line.iloc[-1] if not signal_line.empty else 0
             }
-        except Exception as e:
-            logger.error(f"Error calculating MACD: {e}")
-            return {'macd': pd.Series(dtype=float), 'macd_signal': pd.Series(dtype=float), 'macd_diff': pd.Series(dtype=float)}
+        except Exception:
+            return {'macd': 0, 'signal': 0, 'histogram': 0}
     
-    def _calculate_vwap_vectorized(self, high: pd.Series, low: pd.Series, close: pd.Series, volume: pd.Series, period: int = 20) -> pd.Series:
-        """Vectorized VWAP calculation"""
+    def calculate_sma(self, prices: pd.Series, period: int) -> float:
+        """Calculate Simple Moving Average"""
         try:
-            typical_price = (high + low + close) / 3
-            vwap = (typical_price * volume).rolling(window=period).sum() / volume.rolling(window=period).sum()
-            return vwap
-        except Exception as e:
-            logger.error(f"Error calculating VWAP: {e}")
-            return pd.Series(dtype=float)
+            sma = prices.rolling(window=period).mean()
+            return sma.iloc[-1] if not sma.empty else prices.iloc[-1]
+        except Exception:
+            return prices.iloc[-1] if not prices.empty else 0
     
-    def _calculate_ema_trend_vectorized(self, close: pd.Series) -> Dict[str, pd.Series]:
-        """Vectorized EMA trend calculation"""
+    def calculate_ema(self, prices: pd.Series, period: int) -> float:
+        """Calculate Exponential Moving Average"""
         try:
-            ema_20 = close.ewm(span=20).mean()
-            ema_50 = close.ewm(span=50).mean()
-            ema_200 = close.ewm(span=200).mean()
-            
-            # Trend signals
-            trend_20_50 = ema_20 > ema_50
-            trend_50_200 = ema_50 > ema_200
-            strong_trend = trend_20_50 & trend_50_200
-            
-            return {
-                'ema_20': ema_20,
-                'ema_50': ema_50,
-                'ema_200': ema_200,
-                'trend_20_50': trend_20_50,
-                'trend_50_200': trend_50_200,
-                'strong_trend': strong_trend
-            }
-        except Exception as e:
-            logger.error(f"Error calculating EMA trend: {e}")
-            return {}
+            ema = prices.ewm(span=period).mean()
+            return ema.iloc[-1] if not ema.empty else prices.iloc[-1]
+        except Exception:
+            return prices.iloc[-1] if not prices.empty else 0
     
-    def _calculate_bollinger_vectorized(self, close: pd.Series, period: int = 20, std_dev: float = 2.0) -> Dict[str, pd.Series]:
-        """Vectorized Bollinger Bands calculation"""
+    def calculate_bollinger_bands(self, prices: pd.Series, period: int = 20, std_dev: int = 2) -> Dict:
+        """Calculate Bollinger Bands"""
         try:
-            sma = close.rolling(window=period).mean()
-            std = close.rolling(window=period).std()
+            sma = prices.rolling(window=period).mean()
+            std = prices.rolling(window=period).std()
             
             upper_band = sma + (std * std_dev)
             lower_band = sma - (std * std_dev)
-            bandwidth = (upper_band - lower_band) / sma
             
             return {
-                'upper': upper_band,
-                'middle': sma,
-                'lower': lower_band,
-                'bandwidth': bandwidth
+                'upper': upper_band.iloc[-1] if not upper_band.empty else prices.iloc[-1],
+                'middle': sma.iloc[-1] if not sma.empty else prices.iloc[-1],
+                'lower': lower_band.iloc[-1] if not lower_band.empty else prices.iloc[-1],
+                'width': (upper_band.iloc[-1] - lower_band.iloc[-1]) / sma.iloc[-1] if not sma.empty else 0
             }
-        except Exception as e:
-            logger.error(f"Error calculating Bollinger Bands: {e}")
-            return {}
-    
-    def _calculate_adx_vectorized(self, high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> Dict[str, pd.Series]:
-        """Vectorized ADX calculation"""
-        try:
-            # Calculate True Range
-            tr1 = high - low
-            tr2 = abs(high - close.shift())
-            tr3 = abs(low - close.shift())
-            tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
-            atr = tr.rolling(window=period).mean()
-            
-            # Calculate Directional Movement
-            dm_plus = (high - high.shift()).where((high - high.shift()) > (low.shift() - low), 0)
-            dm_minus = (low.shift() - low).where((low.shift() - low) > (high - high.shift()), 0)
-            
-            # Smooth the directional movement
-            di_plus = 100 * (dm_plus.rolling(window=period).mean() / atr)
-            di_minus = 100 * (dm_minus.rolling(window=period).mean() / atr)
-            
-            # Calculate ADX
-            dx = 100 * abs(di_plus - di_minus) / (di_plus + di_minus)
-            adx = dx.rolling(window=period).mean()
-            
+        except Exception:
+            current_price = prices.iloc[-1] if not prices.empty else 0
             return {
-                'adx': adx,
-                'di_plus': di_plus,
-                'di_minus': di_minus
+                'upper': current_price,
+                'middle': current_price,
+                'lower': current_price,
+                'width': 0
             }
-        except Exception as e:
-            logger.error(f"Error calculating ADX: {e}")
-            return {}
     
-    def _calculate_obv_vectorized(self, close: pd.Series, volume: pd.Series) -> pd.Series:
-        """Vectorized OBV calculation"""
+    def calculate_volume_sma(self, data: pd.DataFrame, period: int = 20) -> float:
+        """Calculate Volume Simple Moving Average"""
         try:
-            price_change = close.diff()
-            obv = pd.Series(index=close.index, dtype=float)
-            obv.iloc[0] = volume.iloc[0]
-            
-            for i in range(1, len(close)):
-                if price_change.iloc[i] > 0:
-                    obv.iloc[i] = obv.iloc[i-1] + volume.iloc[i]
-                elif price_change.iloc[i] < 0:
-                    obv.iloc[i] = obv.iloc[i-1] - volume.iloc[i]
-                else:
-                    obv.iloc[i] = obv.iloc[i-1]
-            
-            return obv
-        except Exception as e:
-            logger.error(f"Error calculating OBV: {e}")
-            return pd.Series(dtype=float)
+            volume_sma = data['Volume'].rolling(window=period).mean()
+            current_volume = data['Volume'].iloc[-1]
+            return current_volume / volume_sma.iloc[-1] if not volume_sma.empty and volume_sma.iloc[-1] > 0 else 1
+        except Exception:
+            return 1
     
-    def _calculate_atr_vectorized(self, high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> pd.Series:
-        """Vectorized ATR calculation"""
+    def calculate_volume_ratio(self, data: pd.DataFrame) -> float:
+        """Calculate volume ratio (current volume vs average)"""
         try:
-            tr1 = high - low
-            tr2 = abs(high - close.shift())
-            tr3 = abs(low - close.shift())
-            tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
-            atr = tr.rolling(window=period).mean()
-            return atr
-        except Exception as e:
-            logger.error(f"Error calculating ATR: {e}")
-            return pd.Series(dtype=float)
+            avg_volume = data['Volume'].mean()
+            current_volume = data['Volume'].iloc[-1]
+            return current_volume / avg_volume if avg_volume > 0 else 1
+        except Exception:
+            return 1
     
-    def _calculate_stoch_rsi_vectorized(self, close: pd.Series, rsi_period: int = 14, stoch_period: int = 14) -> Dict[str, pd.Series]:
-        """Vectorized Stochastic RSI calculation"""
+    def calculate_atr(self, data: pd.DataFrame, period: int = 14) -> float:
+        """Calculate Average True Range"""
         try:
-            rsi = self._calculate_rsi_vectorized(close, rsi_period)
+            high_low = data['High'] - data['Low']
+            high_close = np.abs(data['High'] - data['Close'].shift())
+            low_close = np.abs(data['Low'] - data['Close'].shift())
             
-            # Calculate Stochastic RSI
-            rsi_min = rsi.rolling(window=stoch_period).min()
-            rsi_max = rsi.rolling(window=stoch_period).max()
-            stoch_rsi = (rsi - rsi_min) / (rsi_max - rsi_min)
+            true_range = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
+            atr = true_range.rolling(window=period).mean()
             
-            # Calculate signal line
-            signal_line = stoch_rsi.rolling(window=3).mean()
-            
-            return {
-                'stoch_rsi': stoch_rsi,
-                'signal_line': signal_line
-            }
-        except Exception as e:
-            logger.error(f"Error calculating Stochastic RSI: {e}")
-            return {}
+            return atr.iloc[-1] if not atr.empty else 0
+        except Exception:
+            return 0
     
-    def calculate_signal_strength(self, signals: Dict[str, bool]) -> int:
-        """Calculate overall signal strength"""
+    def calculate_vwap(self, data: pd.DataFrame) -> float:
+        """Calculate Volume Weighted Average Price"""
+        try:
+            typical_price = (data['High'] + data['Low'] + data['Close']) / 3
+            vwap = (typical_price * data['Volume']).cumsum() / data['Volume'].cumsum()
+            return vwap.iloc[-1] if not vwap.empty else data['Close'].iloc[-1]
+        except Exception:
+            return data['Close'].iloc[-1] if not data.empty else 0
+    
+    def get_signal_strength(self, indicators: Dict) -> Dict:
+        """Get signal strength based on indicators"""
         try:
             strength = 0
-            
-            # Weight different signals
-            signal_weights = {
-                'rsi_oversold': 15,
-                'rsi_overbought': 15,
-                'macd_bullish': 20,
-                'macd_bearish': 20,
-                'vwap_bullish': 10,
-                'vwap_bearish': 10,
-                'ema_trend_bullish': 15,
-                'ema_trend_bearish': 15,
-                'bb_squeeze': 10,
-                'adx_strong': 10,
-                'obv_bullish': 5,
-                'obv_bearish': 5
-            }
-            
-            for signal, weight in signal_weights.items():
-                if signals.get(signal, False):
-                    strength += weight
-            
-            return min(strength, 100)  # Cap at 100
-            
-        except Exception as e:
-            logger.error(f"Error calculating signal strength: {e}")
-            return 0
-    
-    def calculate_stock_scalping_score(self, data: pd.DataFrame, indicators: Dict[str, pd.Series], current_price: float) -> Dict[str, float]:
-        """Calculate comprehensive scalping score for a stock"""
-        try:
-            if data.empty or not indicators:
-                return {'overall_score': 0, 'volatility': 0, 'momentum': 0, 'trend': 0, 'volume': 0}
-            
-            # Get latest values
-            latest_close = data['Close'].iloc[-1]
-            latest_volume = data['Volume'].iloc[-1]
-            
-            # Volatility score (0-25 points)
-            volatility_score = self._calculate_volatility_score(data, indicators)
-            
-            # Momentum score (0-25 points)
-            momentum_score = self._calculate_momentum_score(indicators)
-            
-            # Trend score (0-25 points)
-            trend_score = self._calculate_trend_score(indicators)
-            
-            # Volume score (0-25 points)
-            volume_score = self._calculate_volume_score(data, indicators)
-            
-            # Overall score
-            overall_score = volatility_score + momentum_score + trend_score + volume_score
-            
-            return {
-                'overall_score': overall_score,
-                'volatility': volatility_score,
-                'momentum': momentum_score,
-                'trend': trend_score,
-                'volume': volume_score
-            }
-            
-        except Exception as e:
-            logger.error(f"Error calculating scalping score: {e}")
-            return {'overall_score': 0, 'volatility': 0, 'momentum': 0, 'trend': 0, 'volume': 0}
-    
-    def _calculate_volatility_score(self, data: pd.DataFrame, indicators: Dict[str, pd.Series]) -> float:
-        """Calculate volatility score (0-25 points)"""
-        try:
-            # Use ATR for volatility measurement
-            atr = indicators.get('atr', pd.Series(dtype=float))
-            if atr.empty:
-                return 0
-            
-            latest_atr = atr.iloc[-1]
-            avg_atr = atr.mean()
-            
-            # Higher volatility is better for scalping (up to a point)
-            volatility_ratio = latest_atr / avg_atr if avg_atr > 0 else 0
-            
-            if 0.5 <= volatility_ratio <= 2.0:
-                return min(25, volatility_ratio * 12.5)
-            else:
-                return max(0, 25 - abs(volatility_ratio - 1.25) * 10)
-                
-        except Exception as e:
-            logger.error(f"Error calculating volatility score: {e}")
-            return 0
-    
-    def _calculate_momentum_score(self, indicators: Dict[str, pd.Series]) -> float:
-        """Calculate momentum score (0-25 points)"""
-        try:
-            score = 0
-            
-            # RSI momentum
-            rsi = indicators.get('rsi', pd.Series(dtype=float))
-            if not rsi.empty:
-                latest_rsi = rsi.iloc[-1]
-                if 30 <= latest_rsi <= 70:  # Not overbought/oversold
-                    score += 10
-                elif 40 <= latest_rsi <= 60:  # Neutral zone
-                    score += 15
-            
-            # MACD momentum
-            macd_data = indicators.get('macd', {})
-            if isinstance(macd_data, dict) and 'macd_diff' in macd_data:
-                macd_diff = macd_data['macd_diff']
-                if not macd_diff.empty:
-                    latest_diff = macd_diff.iloc[-1]
-                    if abs(latest_diff) > 0:  # Some momentum
-                        score += 10
-            
-            return min(25, score)
-            
-        except Exception as e:
-            logger.error(f"Error calculating momentum score: {e}")
-            return 0
-    
-    def _calculate_trend_score(self, indicators: Dict[str, pd.Series]) -> float:
-        """Calculate trend score (0-25 points)"""
-        try:
-            score = 0
-            
-            # EMA trend
-            ema_data = indicators.get('ema_trend', {})
-            if isinstance(ema_data, dict) and 'strong_trend' in ema_data:
-                strong_trend = ema_data['strong_trend']
-                if not strong_trend.empty and strong_trend.iloc[-1]:
-                    score += 15
-            
-            # ADX trend strength
-            adx_data = indicators.get('adx', {})
-            if isinstance(adx_data, dict) and 'adx' in adx_data:
-                adx = adx_data['adx']
-                if not adx.empty:
-                    latest_adx = adx.iloc[-1]
-                    if latest_adx > 25:  # Strong trend
-                        score += 10
-            
-            return min(25, score)
-            
-        except Exception as e:
-            logger.error(f"Error calculating trend score: {e}")
-            return 0
-    
-    def _calculate_volume_score(self, data: pd.DataFrame, indicators: Dict[str, pd.Series]) -> float:
-        """Calculate volume score (0-25 points)"""
-        try:
-            score = 0
-            
-            # Volume analysis
-            volume = data['Volume']
-            if not volume.empty:
-                latest_volume = volume.iloc[-1]
-                avg_volume = volume.mean()
-                
-                if latest_volume > avg_volume:  # Above average volume
-                    score += 15
-                elif latest_volume > avg_volume * 0.8:  # Near average volume
-                    score += 10
-            
-            # OBV trend
-            obv = indicators.get('obv', pd.Series(dtype=float))
-            if not obv.empty and len(obv) > 1:
-                obv_trend = obv.iloc[-1] - obv.iloc[-2]
-                if obv_trend > 0:  # Positive OBV trend
-                    score += 10
-            
-            return min(25, score)
-            
-        except Exception as e:
-            logger.error(f"Error calculating volume score: {e}")
-            return 0
-    
-    def rank_stocks_for_scalping(self, stock_data: Dict[str, pd.DataFrame], indicators_data: Dict[str, Dict[str, pd.Series]], current_prices: Dict[str, float]) -> List[Dict]:
-        """Rank stocks for scalping opportunities"""
-        try:
-            rankings = []
-            
-            for symbol in stock_data.keys():
-                data = stock_data[symbol]
-                indicators = indicators_data.get(symbol, {})
-                current_price = current_prices.get(symbol, 0)
-                
-                if data.empty or not indicators or current_price == 0:
-                    continue
-                
-                # Calculate scores
-                scores = self.calculate_stock_scalping_score(data, indicators, current_price)
-                
-                # Determine signal direction
-                signal_direction = self._determine_signal_direction(indicators)
-                
-                # Calculate signal strength
-                signal_strength = self._calculate_signal_strength_from_indicators(indicators)
-                
-                # Calculate volatility
-                volatility = self._calculate_volatility_metric(data, indicators)
-                
-                rankings.append({
-                    'symbol': symbol,
-                    'overall_score': scores['overall_score'],
-                    'volatility_score': scores['volatility'],
-                    'momentum_score': scores['momentum'],
-                    'trend_score': scores['trend'],
-                    'volume_score': scores['volume'],
-                    'signal_direction': signal_direction,
-                    'signal_strength': signal_strength,
-                    'volatility': volatility,
-                    'current_price': current_price
-                })
-            
-            # Sort by overall score (descending)
-            rankings.sort(key=lambda x: x['overall_score'], reverse=True)
-            
-            return rankings
-            
-        except Exception as e:
-            logger.error(f"Error ranking stocks: {e}")
-            return []
-    
-    def _determine_signal_direction(self, indicators: Dict[str, pd.Series]) -> str:
-        """Determine signal direction based on indicators"""
-        try:
-            bullish_signals = 0
-            bearish_signals = 0
+            reasons = []
             
             # RSI signals
-            rsi = indicators.get('rsi', pd.Series(dtype=float))
-            if not rsi.empty:
-                latest_rsi = rsi.iloc[-1]
-                if latest_rsi < 30:
-                    bullish_signals += 1
-                elif latest_rsi > 70:
-                    bearish_signals += 1
+            rsi = indicators.get('rsi', 50)
+            if rsi < 30:
+                strength += 25
+                reasons.append("RSI oversold")
+            elif rsi > 70:
+                strength -= 25
+                reasons.append("RSI overbought")
             
             # MACD signals
-            macd_data = indicators.get('macd', {})
-            if isinstance(macd_data, dict) and 'macd_diff' in macd_data:
-                macd_diff = macd_data['macd_diff']
-                if not macd_diff.empty:
-                    latest_diff = macd_diff.iloc[-1]
-                    if latest_diff > 0:
-                        bullish_signals += 1
-                    else:
-                        bearish_signals += 1
+            macd = indicators.get('macd', 0)
+            macd_signal = indicators.get('macd_signal', 0)
+            if macd > macd_signal:
+                strength += 20
+                reasons.append("MACD bullish")
+            elif macd < macd_signal:
+                strength -= 20
+                reasons.append("MACD bearish")
             
-            # EMA trend signals
-            ema_data = indicators.get('ema_trend', {})
-            if isinstance(ema_data, dict) and 'strong_trend' in ema_data:
-                strong_trend = ema_data['strong_trend']
-                if not strong_trend.empty and strong_trend.iloc[-1]:
-                    bullish_signals += 1
+            # Bollinger Bands signals
+            current_price = indicators.get('current_price', 0)
+            bb_upper = indicators.get('bb_upper', 0)
+            bb_lower = indicators.get('bb_lower', 0)
             
-            if bullish_signals > bearish_signals:
-                return 'bullish'
-            elif bearish_signals > bullish_signals:
-                return 'bearish'
+            if current_price < bb_lower:
+                strength += 20
+                reasons.append("Price below BB")
+            elif current_price > bb_upper:
+                strength -= 20
+                reasons.append("Price above BB")
+            
+            # Volume signals
+            volume_sma = indicators.get('volume_sma', 1)
+            if volume_sma > 1.5:
+                strength += 15
+                reasons.append("High volume")
+            elif volume_sma < 0.5:
+                strength -= 15
+                reasons.append("Low volume")
+            
+            # Moving average signals
+            sma_20 = indicators.get('sma_20', 0)
+            if current_price > sma_20:
+                strength += 10
+                reasons.append("Price above SMA20")
             else:
-                return 'neutral'
-                
-        except Exception as e:
-            logger.error(f"Error determining signal direction: {e}")
-            return 'neutral'
-    
-    def _calculate_signal_strength_from_indicators(self, indicators: Dict[str, pd.Series]) -> float:
-        """Calculate signal strength from indicators"""
-        try:
-            strength = 0
+                strength -= 10
+                reasons.append("Price below SMA20")
             
-            # RSI strength
-            rsi = indicators.get('rsi', pd.Series(dtype=float))
-            if not rsi.empty:
-                latest_rsi = rsi.iloc[-1]
-                if 30 <= latest_rsi <= 70:
-                    strength += 25
-                elif 40 <= latest_rsi <= 60:
-                    strength += 35
-            
-            # MACD strength
-            macd_data = indicators.get('macd', {})
-            if isinstance(macd_data, dict) and 'macd_diff' in macd_data:
-                macd_diff = macd_data['macd_diff']
-                if not macd_diff.empty:
-                    latest_diff = abs(macd_diff.iloc[-1])
-                    strength += min(25, latest_diff * 10)
-            
-            # ADX strength
-            adx_data = indicators.get('adx', {})
-            if isinstance(adx_data, dict) and 'adx' in adx_data:
-                adx = adx_data['adx']
-                if not adx.empty:
-                    latest_adx = adx.iloc[-1]
-                    strength += min(25, latest_adx)
-            
-            return min(100, strength)
+            return {
+                'strength': strength,
+                'reasons': reasons,
+                'signal': 'BUY' if strength >= 30 else 'SELL' if strength <= -30 else 'HOLD'
+            }
             
         except Exception as e:
-            logger.error(f"Error calculating signal strength: {e}")
-            return 0
-    
-    def _calculate_volatility_metric(self, data: pd.DataFrame, indicators: Dict[str, pd.Series]) -> float:
-        """Calculate volatility metric"""
-        try:
-            atr = indicators.get('atr', pd.Series(dtype=float))
-            if not atr.empty:
-                latest_atr = atr.iloc[-1]
-                avg_atr = atr.mean()
-                return (latest_atr / avg_atr) if avg_atr > 0 else 1.0
-            return 1.0
-        except Exception as e:
-            logger.error(f"Error calculating volatility metric: {e}")
-            return 1.0
-    
-    def clear_cache(self):
-        """Clear indicator cache"""
-        self._indicator_cache.clear()
-        self._cache_timestamps.clear()
-        logger.info("Technical indicators cache cleared")
-    
-    def get_cache_stats(self) -> Dict[str, int]:
-        """Get cache statistics"""
-        return {
-            "cached_items": len(self._indicator_cache),
-            "cache_hits": 0,  # TODO: Implement cache hit tracking
-            "cache_misses": 0  # TODO: Implement cache miss tracking
-        }
-
-# Backward compatibility
-TechnicalIndicators = OptimizedTechnicalIndicators 
+            return {
+                'strength': 0,
+                'reasons': [f"Error: {e}"],
+                'signal': 'HOLD'
+            } 
