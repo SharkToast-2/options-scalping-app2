@@ -832,8 +832,14 @@ class OptimizedOptionsScalpingDashboard:
                         st.error("❌ Schwab OAuth2 authentication failed")
             
             # Show manual OAuth start button as backup
-            if st.button("🌐 Reopen Schwab Authorization Page"):
-                self._open_schwab_auth_page()
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("🌐 Reopen Schwab Authorization Page"):
+                    self._open_schwab_auth_page()
+            with col2:
+                if st.button("🔗 Copy Authorization URL"):
+                    st.code("https://api.schwabapi.com/v1/oauth/authorize?response_type=code&client_id=1wzwOrhivb2PkR1UCAUVTKYqC4MTNYlj&scope=readonly&redirect_uri=https://developer.schwab.com/oauth2-redirect.html", language="text")
+                    st.info("📋 URL copied! You can paste this in your browser manually.")
                 
         except Exception as e:
             st.error(f"❌ Error during OAuth2 authentication: {e}")
@@ -843,27 +849,75 @@ class OptimizedOptionsScalpingDashboard:
         try:
             import webbrowser
             import platform
+            import subprocess
+            import os
             
             # Schwab OAuth2 authorization URL
             auth_url = "https://api.schwabapi.com/v1/oauth/authorize?response_type=code&client_id=1wzwOrhivb2PkR1UCAUVTKYqC4MTNYlj&scope=readonly&redirect_uri=https://developer.schwab.com/oauth2-redirect.html"
             
-            # Try to open browser
-            success = webbrowser.open(auth_url)
+            # Try multiple methods to open browser
+            success = False
             
-            if success:
-                st.success("🌐 Browser opened to Schwab authorization page!")
-                st.info("Please complete the authorization and paste the redirect URL above.")
-            else:
-                st.warning("⚠️ Could not automatically open browser")
-                st.info(f"Please manually visit: {auth_url}")
+            # Method 1: Try webbrowser module
+            try:
+                success = webbrowser.open(auth_url)
+                if success:
+                    st.success("🌐 Browser opened to Schwab authorization page!")
+                    st.info("Please complete the authorization and paste the redirect URL above.")
+            except Exception as e:
+                st.warning(f"⚠️ webbrowser.open() failed: {e}")
+            
+            # Method 2: Try platform-specific commands
+            if not success:
+                try:
+                    if platform.system() == "Darwin":  # macOS
+                        subprocess.run(["open", auth_url], check=True)
+                        st.success("🌐 Browser opened using macOS 'open' command!")
+                        success = True
+                    elif platform.system() == "Windows":
+                        subprocess.run(["start", auth_url], shell=True, check=True)
+                        st.success("🌐 Browser opened using Windows 'start' command!")
+                        success = True
+                    elif platform.system() == "Linux":
+                        subprocess.run(["xdg-open", auth_url], check=True)
+                        st.success("🌐 Browser opened using Linux 'xdg-open' command!")
+                        success = True
+                except Exception as e:
+                    st.warning(f"⚠️ Platform-specific browser opening failed: {e}")
+            
+            # Method 3: Try common browser executables
+            if not success:
+                browsers = [
+                    "google-chrome", "chrome", "firefox", "safari", 
+                    "microsoft-edge", "edge", "opera", "brave"
+                ]
                 
-            # Also show the URL for manual copy/paste
+                for browser in browsers:
+                    try:
+                        subprocess.run([browser, auth_url], check=True)
+                        st.success(f"🌐 Browser opened using {browser}!")
+                        success = True
+                        break
+                    except (subprocess.CalledProcessError, FileNotFoundError):
+                        continue
+            
+            # If all methods fail, show manual instructions
+            if not success:
+                st.warning("⚠️ Could not automatically open browser")
+                st.info("Please manually visit the Schwab authorization page")
+                
+            # Always show the URL for manual copy/paste
+            st.markdown("**🔗 Schwab Authorization URL:**")
             st.code(auth_url, language="text")
+            
+            # Add a clickable link
+            st.markdown(f"[🌐 Click here to open Schwab Authorization Page]({auth_url})")
             
         except Exception as e:
             st.error(f"❌ Error opening browser: {e}")
             st.info("Please manually visit the Schwab authorization page")
             st.code(auth_url, language="text")
+            st.markdown(f"[🌐 Click here to open Schwab Authorization Page]({auth_url})")
     
     def _test_schwab_api(self):
         """Test Schwab API connection with API keys"""
