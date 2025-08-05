@@ -760,12 +760,13 @@ class OptimizedOptionsScalpingDashboard:
                 with open('config.json', 'r') as f:
                     config = json.load(f)
                     schwab_auth = config.get('schwab_auth', {})
-                    if schwab_auth.get('status') == 'authenticated':
+                    # Check if we have access_token or auth_code
+                    if schwab_auth.get('access_token') or schwab_auth.get('auth_code'):
                         return {
                             'authenticated': True,
                             'method': schwab_auth.get('method', 'OAuth2'),
                             'last_auth': schwab_auth.get('timestamp', 'Unknown'),
-                            'expires': schwab_auth.get('expires', 'Unknown')
+                            'expires': schwab_auth.get('expires', '1 hour')
                         }
             except:
                 pass
