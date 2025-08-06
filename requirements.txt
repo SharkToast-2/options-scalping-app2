@@ -7,4 +7,5 @@ ta
 python-dotenv
 requests
 scikit-learn
-playwright 
+playwright
+cryptography 

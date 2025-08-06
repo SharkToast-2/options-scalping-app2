@@ -1,21 +1,30 @@
-# Virtual Environment
-bin/
-include/
-lib/
-pyvenv.cfg
-share/
-
-# Environment Variables
-.env
-.env.local
-.env.production
-
-# Configuration files with sensitive data
-config.json
-config.json.backup
+# Security and sensitive files
+config/.env
+config/.secret_key
+config/secure_config.json
+config/schwab_tokens.json
 *.key
 *.pem
 *.p12
+*.pfx
+
+# Logs
+logs/
+*.log
+trading_log.json
+signal_log.json
+error_log.json
+security_events.json
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment files
+.env
+.env.local
+.env.production
 
 # Python
 __pycache__/
@@ -38,62 +47,45 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
 
-# Jupyter Notebook
-.ipynb_checkpoints
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
 
-# PyCharm
-.idea/
-
-# VS Code
+# IDE
 .vscode/
-
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Windows
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-
-# Logs
-*.log
-logs/
-trading_log.csv
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
-
-# Temporary files
-*.tmp
-*.temp
+.idea/
 *.swp
 *.swo
 *~
 
-# Test files
-test_*.py
-*_test.py
-test_*.txt
-test_*.json
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-# Cache
-.cache/
-.pytest_cache/
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
 
-# Coverage
-.coverage
-htmlcov/
+# Jupyter Notebook
+.ipynb_checkpoints
 
-# Streamlit
-.streamlit/
+# pyenv
+.python-version
 
-# API Keys and Secrets (backup files)
-*_backup.json
-*_old.json
-secrets.json 
+# Backup files
+backups/
+*.backup
+*.bak
+
+# Schwab credentials backup
+schwab_backup.json 
