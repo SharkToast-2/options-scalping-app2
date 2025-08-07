@@ -1,31 +1,3 @@
-# Security and sensitive files
-config/.env
-config/.secret_key
-config/secure_config.json
-config/schwab_tokens.json
-*.key
-*.pem
-*.p12
-*.pfx
-
-# Logs
-logs/
-*.log
-trading_log.json
-signal_log.json
-error_log.json
-security_events.json
-
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
-# Environment files
-.env
-.env.local
-.env.production
-
 # Python
 __pycache__/
 *.py[cod]
@@ -47,21 +19,72 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # Virtual environments
 venv/
 env/
 ENV/
+env.bak/
+venv.bak/
 .venv/
 
-# IDE
+# Environment variables and secrets
+.env
+.env.local
+.env.production
+.env.staging
+config/.env
+*.key
+*.pem
+*.p12
+*.pfx
+secrets.json
+credentials.json
+api_keys.txt
+
+# Trading data and logs
+logs/
+*.log
+trading_log.json
+signal_log.json
+error_log.json
+performance_metrics_*.json
+stock_data.db
+*.sqlite
+*.sqlite3
+
+# Cache and temporary files
+.cache/
+*.cache
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# IDE and editor files
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# OS
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Documentation builds
+docs/_build/
+site/
+
+# OS generated files
 .DS_Store
 .DS_Store?
 ._*
@@ -70,22 +93,37 @@ ENV/
 ehthumbs.db
 Thumbs.db
 
-# Temporary files
-*.tmp
-*.temp
-*.bak
-*.backup
+# Schwab API specific
+schwab_tokens.json
+oauth_tokens.json
+*.token
 
-# Jupyter Notebook
-.ipynb_checkpoints
+# Performance monitoring
+performance_data/
+system_metrics/
+monitoring_logs/
 
-# pyenv
-.python-version
+# Data files
+*.csv
+*.xlsx
+*.xls
+market_data/
+historical_data/
 
 # Backup files
-backups/
-*.backup
 *.bak
+*.backup
+*.old
 
-# Schwab credentials backup
-schwab_backup.json 
+# Security audit files
+security_audit_report.json
+vulnerability_scan_results/
+
+# Streamlit
+.streamlit/
+
+# Node modules (if any frontend components)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log* 

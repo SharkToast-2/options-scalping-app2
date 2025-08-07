@@ -1,0 +1,29 @@
+{
+  "schwab_credentials": {
+    "client_id": "1wzwOrhivb2PkR1UCAUVTKYqC4MTNYlj",
+    "client_secret": "67zvYgAIa8bqWr2v",
+    "redirect_uri": "https://developer.schwab.com/oauth2-redirect.html",
+    "trading_key": "3ZHxbk0X7QYK6s0T8VkKNfSkKI1M8LQu",
+    "trading_secret": "eUDIuuRPUDz524ih",
+    "market_data_key": "ldUA8vYfffffryNx194I5cWeWDSy2Jl1",
+    "market_data_secret": "67zvYgAIa8bqWr2v"
+  },
+  "schwab_urls": {
+    "authorization_url": "https://api.schwabapi.com/v1/oauth/authorize?response_type=code&client_id=1wzwOrhivb2PkR1UCAUVTKYqC4MTNYlj&scope=readonly&redirect_uri=https://developer.schwab.com/oauth2-redirect.html",
+    "token_url": "https://api.schwabapi.com/v1/oauth/token",
+    "client_login": "https://client.schwab.com/Areas/Access/Login",
+    "account_summary": "https://client.schwab.com/app/accounts/positions/#/"
+  },
+  "other_api_keys": {
+    "polygon_api_key": "ylJB2jaCAWQaHTa7BZFB60GAoapmK97P"
+  },
+  "auth_status": {
+    "access_token": "mock_schwab_access_token_development",
+    "refresh_token": "mock_schwab_refresh_token_development",
+    "timestamp": 1754274074.521635,
+    "status": "mock_authenticated",
+    "note": "Mock authentication for development - OAuth 2.0 issues being resolved"
+  },
+  "backup_created": "2025-01-02",
+  "note": "All Schwab credentials and configuration saved for later use"
+} 
