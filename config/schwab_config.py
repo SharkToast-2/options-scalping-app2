@@ -11,8 +11,8 @@ import requests
 from cryptography.fernet import Fernet
 
 # Schwab OAuth2 Configuration
-SCHWAB_CLIENT_ID = os.getenv("SCHWAB_CLIENT_ID", "your_client_id")
-SCHWAB_CLIENT_SECRET = os.getenv("SCHWAB_CLIENT_SECRET", "your_secret")
+SCHWAB_CLIENT_ID = os.getenv("SCHWAB_CLIENT_ID", "")
+SCHWAB_CLIENT_SECRET = os.getenv("SCHWAB_CLIENT_SECRET", "")
 SCHWAB_REDIRECT_URI = os.getenv("SCHWAB_REDIRECT_URI", "http://localhost:8501/callback")
 
 # Schwab API URLs

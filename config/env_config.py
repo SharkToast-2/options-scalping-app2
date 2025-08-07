@@ -23,7 +23,7 @@ SCHWAB_MARKET_DATA_KEY = os.getenv('SCHWAB_MARKET_DATA_KEY', 'ldUA8vYfffffryNx19
 SCHWAB_MARKET_DATA_SECRET = os.getenv('SCHWAB_MARKET_DATA_SECRET', '67zvYgAIa8bqWr2v')
 
 # Other API Keys
-POLYGON_API_KEY = os.getenv('POLYGON_API_KEY', 'ylJB2jaCAWQaHTa7BZFB60GAoapmK97P')
+POLYGON_API_KEY = os.getenv('POLYGON_API_KEY', '')
 
 # Schwab URLs
 SCHWAB_AUTH_URL = "https://api.schwabapi.com/v1/oauth/authorize"

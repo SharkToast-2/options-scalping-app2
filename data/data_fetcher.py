@@ -86,8 +86,9 @@ class OptimizedDataFetcher:
             # Initialize Polygon.io
             try:
                 from data.polygon_data import initialize_polygon
-                polygon_api_key = "ylJB2jaCAWQaHTa7BZFB60GAoapmK97P"  # Your Polygon API key
-                initialize_polygon(polygon_api_key)
+                    polygon_api_key = os.getenv("POLYGON_API_KEY", "")  # Load from environment variable
+    if polygon_api_key:
+        initialize_polygon(polygon_api_key)
                 self.data_source = "polygon"
                 logger.info("✅ Using Polygon.io as data source")
                 return
