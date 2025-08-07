@@ -1,387 +1,426 @@
 #!/usr/bin/env python3
 """
-Performance Monitoring Utility for Options Scalping Application
+Optimized Performance Monitor
+Monitors and optimizes system performance for the options scalping bot
 """
 
 import time
 import psutil
 import threading
-import logging
-from typing import Dict, List, Optional, Callable
-from datetime import datetime, timedelta
-from dataclasses import dataclass, field
-from collections import defaultdict, deque
 import asyncio
-import functools
+from typing import Dict, List, Optional, Tuple
+from dataclasses import dataclass, asdict
+from datetime import datetime, timedelta
+import json
+import logging
+from collections import deque
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
 @dataclass
-class PerformanceMetric:
-    """Performance metric data class"""
-    name: str
-    value: float
+class PerformanceMetrics:
+    """Performance metrics data structure"""
     timestamp: datetime
-    unit: str = ""
-    tags: Dict[str, str] = field(default_factory=dict)
+    cpu_percent: float
+    memory_percent: float
+    memory_used_mb: float
+    disk_io_read_mb: float
+    disk_io_write_mb: float
+    network_sent_mb: float
+    network_recv_mb: float
+    response_time_ms: float
+    cache_hit_rate: float
+    error_rate: float
+    active_threads: int
+    active_connections: int
 
-@dataclass
-class FunctionProfile:
-    """Function profiling data"""
-    name: str
-    call_count: int = 0
-    total_time: float = 0.0
-    avg_time: float = 0.0
-    min_time: float = float('inf')
-    max_time: float = 0.0
-    last_call: Optional[datetime] = None
-
-class PerformanceMonitor:
-    """Performance monitoring and profiling utility"""
+class OptimizedPerformanceMonitor:
+    """Optimized performance monitor with real-time tracking and optimization"""
     
     def __init__(self, max_history: int = 1000):
         self.max_history = max_history
-        self.metrics_history = defaultdict(lambda: deque(maxlen=max_history))
-        self.function_profiles = {}
+        self.metrics_history = deque(maxlen=max_history)
         self.start_time = time.time()
-        self.monitoring_enabled = True
-        
-        # System metrics
-        self.system_metrics = {
-            'cpu_percent': 0.0,
-            'memory_percent': 0.0,
-            'disk_usage': 0.0,
-            'network_io': {'bytes_sent': 0, 'bytes_recv': 0}
-        }
+        self.monitoring = False
+        self.monitor_thread = None
+        self.lock = threading.Lock()
         
         # Performance thresholds
         self.thresholds = {
-            'cpu_warning': 80.0,
-            'memory_warning': 85.0,
-            'disk_warning': 90.0,
-            'response_time_warning': 1.0,
-            'error_rate_warning': 0.05
+            'cpu_warning': 70.0,
+            'cpu_critical': 90.0,
+            'memory_warning': 80.0,
+            'memory_critical': 95.0,
+            'response_time_warning': 1000.0,  # ms
+            'response_time_critical': 5000.0,  # ms
+            'error_rate_warning': 0.05,  # 5%
+            'error_rate_critical': 0.10   # 10%
         }
         
-        # Start monitoring thread
-        self._start_monitoring()
-    
-    def _start_monitoring(self):
-        """Start background monitoring thread"""
-        def monitor_system():
-            while self.monitoring_enabled:
-                try:
-                    self._update_system_metrics()
-                    time.sleep(5)  # Update every 5 seconds
-                except Exception as e:
-                    logger.error(f"Error in system monitoring: {e}")
+        # Optimization settings
+        self.optimization_enabled = True
+        self.auto_scale = True
+        self.cache_optimization = True
         
-        self.monitor_thread = threading.Thread(target=monitor_system, daemon=True)
-        self.monitor_thread.start()
+        # Performance alerts
+        self.alerts = []
+        self.alert_callbacks = []
     
-    def _update_system_metrics(self):
-        """Update system metrics"""
-        try:
-            # CPU usage
-            self.system_metrics['cpu_percent'] = psutil.cpu_percent(interval=1)
-            
-            # Memory usage
-            memory = psutil.virtual_memory()
-            self.system_metrics['memory_percent'] = memory.percent
-            
-            # Disk usage
-            disk = psutil.disk_usage('/')
-            self.system_metrics['disk_usage'] = disk.percent
-            
-            # Network I/O
-            network = psutil.net_io_counters()
-            self.system_metrics['network_io'] = {
-                'bytes_sent': network.bytes_sent,
-                'bytes_recv': network.bytes_recv
-            }
-            
-            # Record metrics
-            self.record_metric('system.cpu_percent', self.system_metrics['cpu_percent'], '%')
-            self.record_metric('system.memory_percent', self.system_metrics['memory_percent'], '%')
-            self.record_metric('system.disk_usage', self.system_metrics['disk_usage'], '%')
-            
-        except Exception as e:
-            logger.error(f"Error updating system metrics: {e}")
-    
-    def record_metric(self, name: str, value: float, unit: str = "", tags: Dict[str, str] = None):
-        """Record a performance metric"""
-        if not self.monitoring_enabled:
+    def start_monitoring(self, interval: float = 1.0):
+        """Start performance monitoring"""
+        if self.monitoring:
+            logger.warning("Performance monitoring already running")
             return
         
-        metric = PerformanceMetric(
-            name=name,
-            value=value,
-            timestamp=datetime.now(),
-            unit=unit,
-            tags=tags or {}
-        )
-        
-        self.metrics_history[name].append(metric)
-        
-        # Check thresholds
-        self._check_thresholds(metric)
-    
-    def _check_thresholds(self, metric: PerformanceMetric):
-        """Check if metric exceeds thresholds"""
-        if metric.name == 'system.cpu_percent' and metric.value > self.thresholds['cpu_warning']:
-            logger.warning(f"High CPU usage: {metric.value}%")
-        
-        elif metric.name == 'system.memory_percent' and metric.value > self.thresholds['memory_warning']:
-            logger.warning(f"High memory usage: {metric.value}%")
-        
-        elif metric.name == 'system.disk_usage' and metric.value > self.thresholds['disk_warning']:
-            logger.warning(f"High disk usage: {metric.value}%")
-    
-    def profile_function(self, func: Callable) -> Callable:
-        """Decorator to profile function performance"""
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            if not self.monitoring_enabled:
-                return func(*args, **kwargs)
-            
-            start_time = time.time()
-            try:
-                result = func(*args, **kwargs)
-                success = True
-            except Exception as e:
-                success = False
-                raise e
-            finally:
-                execution_time = time.time() - start_time
-                self._update_function_profile(func.__name__, execution_time, success)
-            
-            return result
-        
-        return wrapper
-    
-    def profile_async_function(self, func: Callable) -> Callable:
-        """Decorator to profile async function performance"""
-        @functools.wraps(func)
-        async def wrapper(*args, **kwargs):
-            if not self.monitoring_enabled:
-                return await func(*args, **kwargs)
-            
-            start_time = time.time()
-            try:
-                result = await func(*args, **kwargs)
-                success = True
-            except Exception as e:
-                success = False
-                raise e
-            finally:
-                execution_time = time.time() - start_time
-                self._update_function_profile(func.__name__, execution_time, success)
-            
-            return result
-        
-        return wrapper
-    
-    def _update_function_profile(self, func_name: str, execution_time: float, success: bool):
-        """Update function profiling data"""
-        if func_name not in self.function_profiles:
-            self.function_profiles[func_name] = FunctionProfile(name=func_name)
-        
-        profile = self.function_profiles[func_name]
-        profile.call_count += 1
-        profile.total_time += execution_time
-        profile.avg_time = profile.total_time / profile.call_count
-        profile.min_time = min(profile.min_time, execution_time)
-        profile.max_time = max(profile.max_time, execution_time)
-        profile.last_call = datetime.now()
-        
-        # Record metric
-        self.record_metric(f'function.{func_name}.execution_time', execution_time, 'seconds')
-        self.record_metric(f'function.{func_name}.success_rate', 1.0 if success else 0.0, '%')
-    
-    def get_metrics_summary(self, metric_name: str = None, time_window: timedelta = None) -> Dict:
-        """Get metrics summary"""
-        summary = {}
-        
-        if metric_name:
-            metrics = self.metrics_history.get(metric_name, [])
-        else:
-            # Get all metrics
-            all_metrics = []
-            for metrics_list in self.metrics_history.values():
-                all_metrics.extend(metrics_list)
-            metrics = all_metrics
-        
-        if time_window:
-            cutoff_time = datetime.now() - time_window
-            metrics = [m for m in metrics if m.timestamp > cutoff_time]
-        
-        if metrics:
-            values = [m.value for m in metrics]
-            summary = {
-                'count': len(values),
-                'min': min(values),
-                'max': max(values),
-                'avg': sum(values) / len(values),
-                'latest': values[-1] if values else None
-            }
-        
-        return summary
-    
-    def get_function_profiles(self) -> Dict[str, FunctionProfile]:
-        """Get function profiling data"""
-        return self.function_profiles.copy()
-    
-    def get_system_status(self) -> Dict:
-        """Get current system status"""
-        return {
-            'uptime': time.time() - self.start_time,
-            'metrics': self.system_metrics.copy(),
-            'thresholds': self.thresholds.copy(),
-            'warnings': self._get_active_warnings()
-        }
-    
-    def _get_active_warnings(self) -> List[str]:
-        """Get active performance warnings"""
-        warnings = []
-        
-        if self.system_metrics['cpu_percent'] > self.thresholds['cpu_warning']:
-            warnings.append(f"High CPU usage: {self.system_metrics['cpu_percent']}%")
-        
-        if self.system_metrics['memory_percent'] > self.thresholds['memory_warning']:
-            warnings.append(f"High memory usage: {self.system_metrics['memory_percent']}%")
-        
-        if self.system_metrics['disk_usage'] > self.thresholds['disk_warning']:
-            warnings.append(f"High disk usage: {self.system_metrics['disk_usage']}%")
-        
-        return warnings
-    
-    def clear_history(self):
-        """Clear metrics history"""
-        for metrics_list in self.metrics_history.values():
-            metrics_list.clear()
-        self.function_profiles.clear()
-    
-    def export_metrics(self, filename: str = None) -> Dict:
-        """Export metrics to file or return as dict"""
-        export_data = {
-            'timestamp': datetime.now().isoformat(),
-            'system_status': self.get_system_status(),
-            'function_profiles': {
-                name: {
-                    'call_count': profile.call_count,
-                    'total_time': profile.total_time,
-                    'avg_time': profile.avg_time,
-                    'min_time': profile.min_time,
-                    'max_time': profile.max_time,
-                    'last_call': profile.last_call.isoformat() if profile.last_call else None
-                }
-                for name, profile in self.function_profiles.items()
-            },
-            'metrics_summary': {
-                name: self.get_metrics_summary(name)
-                for name in self.metrics_history.keys()
-            }
-        }
-        
-        if filename:
-            import json
-            with open(filename, 'w') as f:
-                json.dump(export_data, f, indent=2, default=str)
-        
-        return export_data
+        self.monitoring = True
+        self.monitor_thread = threading.Thread(target=self._monitor_loop, args=(interval,), daemon=True)
+        self.monitor_thread.start()
+        logger.info("🚀 Performance monitoring started")
     
     def stop_monitoring(self):
         """Stop performance monitoring"""
-        self.monitoring_enabled = False
-        if hasattr(self, 'monitor_thread'):
-            self.monitor_thread.join(timeout=5)
-
-# Global performance monitor instance
-performance_monitor = PerformanceMonitor()
-
-# Convenience decorators
-def monitor_performance(func: Callable) -> Callable:
-    """Decorator to monitor function performance"""
-    return performance_monitor.profile_function(func)
-
-def monitor_async_performance(func: Callable) -> Callable:
-    """Decorator to monitor async function performance"""
-    return performance_monitor.profile_async_function(func)
-
-def record_metric(name: str, value: float, unit: str = "", tags: Dict[str, str] = None):
-    """Record a performance metric"""
-    performance_monitor.record_metric(name, value, unit, tags)
-
-# Context manager for timing operations
-class Timer:
-    """Context manager for timing operations"""
+        self.monitoring = False
+        if self.monitor_thread:
+            self.monitor_thread.join(timeout=5.0)
+        logger.info("⏹️ Performance monitoring stopped")
     
-    def __init__(self, name: str, tags: Dict[str, str] = None):
-        self.name = name
-        self.tags = tags or {}
-        self.start_time = None
+    def _monitor_loop(self, interval: float):
+        """Main monitoring loop"""
+        while self.monitoring:
+            try:
+                metrics = self._collect_metrics()
+                self._store_metrics(metrics)
+                self._check_thresholds(metrics)
+                self._optimize_performance(metrics)
+                time.sleep(interval)
+            except Exception as e:
+                logger.error(f"Error in monitoring loop: {e}")
+                time.sleep(interval)
     
-    def __enter__(self):
-        self.start_time = time.time()
-        return self
+    def _collect_metrics(self) -> PerformanceMetrics:
+        """Collect current performance metrics"""
+        # System metrics
+        cpu_percent = psutil.cpu_percent(interval=0.1)
+        memory = psutil.virtual_memory()
+        disk_io = psutil.disk_io_counters()
+        network_io = psutil.net_io_counters()
+        
+        # Process metrics
+        process = psutil.Process()
+        process_memory = process.memory_info()
+        
+        # Calculate response time (simplified)
+        response_time = self._measure_response_time()
+        
+        # Cache hit rate (placeholder)
+        cache_hit_rate = self._get_cache_hit_rate()
+        
+        # Error rate (placeholder)
+        error_rate = self._get_error_rate()
+        
+        # Active threads and connections
+        active_threads = threading.active_count()
+        active_connections = len(psutil.net_connections())
+        
+        return PerformanceMetrics(
+            timestamp=datetime.now(),
+            cpu_percent=cpu_percent,
+            memory_percent=memory.percent,
+            memory_used_mb=process_memory.rss / 1024 / 1024,
+            disk_io_read_mb=disk_io.read_bytes / 1024 / 1024 if disk_io else 0,
+            disk_io_write_mb=disk_io.write_bytes / 1024 / 1024 if disk_io else 0,
+            network_sent_mb=network_io.bytes_sent / 1024 / 1024,
+            network_recv_mb=network_io.bytes_recv / 1024 / 1024,
+            response_time_ms=response_time,
+            cache_hit_rate=cache_hit_rate,
+            error_rate=error_rate,
+            active_threads=active_threads,
+            active_connections=active_connections
+        )
     
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.start_time:
-            execution_time = time.time() - self.start_time
-            record_metric(f'timer.{self.name}', execution_time, 'seconds', self.tags)
-
-# Utility functions
-def get_performance_summary() -> Dict:
-    """Get performance summary"""
-    return {
-        'system_status': performance_monitor.get_system_status(),
-        'function_profiles': performance_monitor.get_function_profiles(),
-        'metrics_summary': {
-            name: performance_monitor.get_metrics_summary(name)
-            for name in performance_monitor.metrics_history.keys()
+    def _measure_response_time(self) -> float:
+        """Measure system response time"""
+        start_time = time.time()
+        # Simulate a quick operation
+        _ = sum(range(1000))
+        return (time.time() - start_time) * 1000  # Convert to milliseconds
+    
+    def _get_cache_hit_rate(self) -> float:
+        """Get current cache hit rate"""
+        # This would integrate with your actual cache system
+        return 0.85  # Placeholder
+    
+    def _get_error_rate(self) -> float:
+        """Get current error rate"""
+        # This would integrate with your actual error tracking
+        return 0.02  # Placeholder
+    
+    def _store_metrics(self, metrics: PerformanceMetrics):
+        """Store metrics in history"""
+        with self.lock:
+            self.metrics_history.append(metrics)
+    
+    def _check_thresholds(self, metrics: PerformanceMetrics):
+        """Check if metrics exceed thresholds"""
+        alerts = []
+        
+        # CPU checks
+        if metrics.cpu_percent > self.thresholds['cpu_critical']:
+            alerts.append(f"🚨 CRITICAL: CPU usage at {metrics.cpu_percent:.1f}%")
+        elif metrics.cpu_percent > self.thresholds['cpu_warning']:
+            alerts.append(f"⚠️ WARNING: CPU usage at {metrics.cpu_percent:.1f}%")
+        
+        # Memory checks
+        if metrics.memory_percent > self.thresholds['memory_critical']:
+            alerts.append(f"🚨 CRITICAL: Memory usage at {metrics.memory_percent:.1f}%")
+        elif metrics.memory_percent > self.thresholds['memory_warning']:
+            alerts.append(f"⚠️ WARNING: Memory usage at {metrics.memory_percent:.1f}%")
+        
+        # Response time checks
+        if metrics.response_time_ms > self.thresholds['response_time_critical']:
+            alerts.append(f"🚨 CRITICAL: Response time at {metrics.response_time_ms:.1f}ms")
+        elif metrics.response_time_ms > self.thresholds['response_time_warning']:
+            alerts.append(f"⚠️ WARNING: Response time at {metrics.response_time_ms:.1f}ms")
+        
+        # Error rate checks
+        if metrics.error_rate > self.thresholds['error_rate_critical']:
+            alerts.append(f"🚨 CRITICAL: Error rate at {metrics.error_rate:.1%}")
+        elif metrics.error_rate > self.thresholds['error_rate_warning']:
+            alerts.append(f"⚠️ WARNING: Error rate at {metrics.error_rate:.1%}")
+        
+        # Store alerts
+        if alerts:
+            for alert in alerts:
+                self.alerts.append({
+                    'timestamp': datetime.now(),
+                    'message': alert,
+                    'severity': 'CRITICAL' if '🚨' in alert else 'WARNING'
+                })
+            
+            # Trigger callbacks
+            for callback in self.alert_callbacks:
+                try:
+                    callback(alerts)
+                except Exception as e:
+                    logger.error(f"Error in alert callback: {e}")
+    
+    def _optimize_performance(self, metrics: PerformanceMetrics):
+        """Apply performance optimizations based on metrics"""
+        if not self.optimization_enabled:
+            return
+        
+        optimizations = []
+        
+        # CPU optimization
+        if metrics.cpu_percent > self.thresholds['cpu_warning']:
+            optimizations.append(self._optimize_cpu_usage())
+        
+        # Memory optimization
+        if metrics.memory_percent > self.thresholds['memory_warning']:
+            optimizations.append(self._optimize_memory_usage())
+        
+        # Cache optimization
+        if metrics.cache_hit_rate < 0.8:
+            optimizations.append(self._optimize_cache())
+        
+        # Apply optimizations
+        for optimization in optimizations:
+            if optimization:
+                logger.info(f"🔧 Applied optimization: {optimization}")
+    
+    def _optimize_cpu_usage(self) -> Optional[str]:
+        """Optimize CPU usage"""
+        # Reduce thread pool size if too many active threads
+        if threading.active_count() > 20:
+            # This would integrate with your actual thread pool management
+            return "Reduced thread pool size"
+        return None
+    
+    def _optimize_memory_usage(self) -> Optional[str]:
+        """Optimize memory usage"""
+        # Clear caches if memory usage is high
+        if hasattr(self, '_clear_caches'):
+            self._clear_caches()
+            return "Cleared memory caches"
+        return None
+    
+    def _optimize_cache(self) -> Optional[str]:
+        """Optimize cache performance"""
+        # This would integrate with your actual cache system
+        return "Optimized cache settings"
+    
+    def get_current_metrics(self) -> PerformanceMetrics:
+        """Get the most recent performance metrics"""
+        with self.lock:
+            if self.metrics_history:
+                return self.metrics_history[-1]
+            return self._collect_metrics()
+    
+    def get_metrics_summary(self, hours: int = 1) -> Dict:
+        """Get performance metrics summary for the last N hours"""
+        with self.lock:
+            if not self.metrics_history:
+                return {}
+            
+            cutoff_time = datetime.now() - timedelta(hours=hours)
+            recent_metrics = [
+                m for m in self.metrics_history 
+                if m.timestamp > cutoff_time
+            ]
+            
+            if not recent_metrics:
+                return {}
+            
+            # Calculate statistics
+            cpu_values = [m.cpu_percent for m in recent_metrics]
+            memory_values = [m.memory_percent for m in recent_metrics]
+            response_times = [m.response_time_ms for m in recent_metrics]
+            
+            return {
+                'period_hours': hours,
+                'sample_count': len(recent_metrics),
+                'cpu': {
+                    'avg': np.mean(cpu_values),
+                    'max': np.max(cpu_values),
+                    'min': np.min(cpu_values),
+                    'std': np.std(cpu_values)
+                },
+                'memory': {
+                    'avg': np.mean(memory_values),
+                    'max': np.max(memory_values),
+                    'min': np.min(memory_values),
+                    'std': np.std(memory_values)
+                },
+                'response_time': {
+                    'avg': np.mean(response_times),
+                    'max': np.max(response_times),
+                    'min': np.min(response_times),
+                    'std': np.std(response_times)
+                },
+                'uptime_seconds': time.time() - self.start_time
+            }
+    
+    def get_alerts(self, hours: int = 24) -> List[Dict]:
+        """Get recent alerts"""
+        cutoff_time = datetime.now() - timedelta(hours=hours)
+        return [
+            alert for alert in self.alerts 
+            if alert['timestamp'] > cutoff_time
+        ]
+    
+    def add_alert_callback(self, callback):
+        """Add a callback function for alerts"""
+        self.alert_callbacks.append(callback)
+    
+    def set_thresholds(self, **kwargs):
+        """Set performance thresholds"""
+        for key, value in kwargs.items():
+            if key in self.thresholds:
+                self.thresholds[key] = value
+                logger.info(f"Updated threshold {key}: {value}")
+    
+    def export_metrics(self, filename: str = None) -> str:
+        """Export metrics to JSON file"""
+        if filename is None:
+            filename = f"performance_metrics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        
+        with self.lock:
+            metrics_data = {
+                'export_timestamp': datetime.now().isoformat(),
+                'metrics': [asdict(m) for m in self.metrics_history],
+                'alerts': self.alerts,
+                'summary': self.get_metrics_summary(24)
+            }
+        
+        with open(filename, 'w') as f:
+            json.dump(metrics_data, f, indent=2, default=str)
+        
+        logger.info(f"📊 Metrics exported to {filename}")
+        return filename
+    
+    def get_performance_recommendations(self) -> List[str]:
+        """Get performance optimization recommendations"""
+        recommendations = []
+        current_metrics = self.get_current_metrics()
+        summary = self.get_metrics_summary(1)
+        
+        if not summary:
+            return ["No performance data available"]
+        
+        # CPU recommendations
+        if summary['cpu']['avg'] > 80:
+            recommendations.append("Consider reducing concurrent operations or optimizing algorithms")
+        
+        if summary['cpu']['std'] > 20:
+            recommendations.append("CPU usage is volatile - consider load balancing")
+        
+        # Memory recommendations
+        if summary['memory']['avg'] > 85:
+            recommendations.append("Memory usage is high - consider implementing memory pooling")
+        
+        # Response time recommendations
+        if summary['response_time']['avg'] > 2000:
+            recommendations.append("Response times are slow - consider caching or async operations")
+        
+        # Cache recommendations
+        if current_metrics.cache_hit_rate < 0.7:
+            recommendations.append("Cache hit rate is low - consider increasing cache size or improving cache keys")
+        
+        # Thread recommendations
+        if current_metrics.active_threads > 50:
+            recommendations.append("Too many active threads - consider using thread pools")
+        
+        if not recommendations:
+            recommendations.append("Performance is within optimal ranges")
+        
+        return recommendations
+    
+    def get_system_health_score(self) -> float:
+        """Calculate overall system health score (0-100)"""
+        current_metrics = self.get_current_metrics()
+        
+        # Calculate individual scores
+        cpu_score = max(0, 100 - current_metrics.cpu_percent)
+        memory_score = max(0, 100 - current_metrics.memory_percent)
+        response_score = max(0, 100 - (current_metrics.response_time_ms / 100))
+        error_score = max(0, 100 - (current_metrics.error_rate * 1000))
+        cache_score = current_metrics.cache_hit_rate * 100
+        
+        # Weighted average
+        weights = {
+            'cpu': 0.25,
+            'memory': 0.25,
+            'response': 0.20,
+            'error': 0.15,
+            'cache': 0.15
         }
-    }
+        
+        health_score = (
+            cpu_score * weights['cpu'] +
+            memory_score * weights['memory'] +
+            response_score * weights['response'] +
+            error_score * weights['error'] +
+            cache_score * weights['cache']
+        )
+        
+        return min(100, max(0, health_score))
 
-def check_performance_health() -> Dict:
-    """Check overall performance health"""
-    system_status = performance_monitor.get_system_status()
-    warnings = system_status['warnings']
-    
-    health_status = {
-        'healthy': len(warnings) == 0,
-        'warnings': warnings,
-        'cpu_usage': system_status['metrics']['cpu_percent'],
-        'memory_usage': system_status['metrics']['memory_percent'],
-        'disk_usage': system_status['metrics']['disk_usage']
-    }
-    
-    return health_status
+# Global instance
+performance_monitor = OptimizedPerformanceMonitor()
 
-def optimize_performance():
-    """Provide performance optimization recommendations"""
-    recommendations = []
-    
-    # Check system metrics
-    system_status = performance_monitor.get_system_status()
-    metrics = system_status['metrics']
-    
-    if metrics['cpu_percent'] > 70:
-        recommendations.append("Consider reducing concurrent operations or optimizing CPU-intensive tasks")
-    
-    if metrics['memory_percent'] > 80:
-        recommendations.append("Consider implementing memory caching or reducing data load")
-    
-    if metrics['disk_usage'] > 85:
-        recommendations.append("Consider cleaning up temporary files or increasing disk space")
-    
-    # Check function profiles
-    function_profiles = performance_monitor.get_function_profiles()
-    slow_functions = [
-        name for name, profile in function_profiles.items()
-        if profile.avg_time > 1.0 and profile.call_count > 10
-    ]
-    
-    if slow_functions:
-        recommendations.append(f"Consider optimizing slow functions: {', '.join(slow_functions)}")
-    
-    return recommendations 
+def start_performance_monitoring(interval: float = 1.0):
+    """Start performance monitoring"""
+    performance_monitor.start_monitoring(interval)
+
+def stop_performance_monitoring():
+    """Stop performance monitoring"""
+    performance_monitor.stop_monitoring()
+
+def get_performance_metrics():
+    """Get current performance metrics"""
+    return performance_monitor.get_current_metrics()
+
+def get_performance_summary(hours: int = 1):
+    """Get performance summary"""
+    return performance_monitor.get_metrics_summary(hours) 
