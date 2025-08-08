@@ -25,6 +25,7 @@ from modules.signal_engine import signal_engine, check_signals, should_buy, shou
 from modules.trade_executor import execute_trade, check_total_loss, get_open_trades, trade_active
 from modules.risk_manager import check_exit_conditions
 from modules.logger import log_trade, get_trade_history
+from modules.schwab_auth import SchwabAuth
 
 # Load environment variables
 load_dotenv("config/.env")
@@ -140,6 +141,11 @@ class OptimizedScalpingBot:
         if st.sidebar.button("🗑️ Clear Trade History"):
             self.clear_trade_history()
         
+        # Schwab Authentication
+        st.sidebar.subheader("🔐 Schwab Authentication")
+        schwab_auth = SchwabAuth()
+        schwab_auth.show_auth_interface()
+        
         # Bot control
         st.sidebar.subheader("🎮 Bot Control")
         running = st.sidebar.toggle("🚀 Start Bot", key="bot_toggle")
@@ -185,18 +191,21 @@ class OptimizedScalpingBot:
             self.show_daily_pnl()
         
         # Main trading area
-        tab1, tab2, tab3, tab4 = st.tabs(["📈 Live Trading", "📊 Technical Analysis", "📋 Trade History", "🎯 Performance"])
+        tab1, tab2, tab3, tab4, tab5 = st.tabs(["🔐 OAuth Setup", "📈 Live Trading", "📊 Technical Analysis", "📋 Trade History", "🎯 Performance"])
         
         with tab1:
-            self.show_live_trading()
+            self.show_oauth_setup()
         
         with tab2:
-            self.show_technical_analysis()
+            self.show_live_trading()
         
         with tab3:
-            self.show_trade_history()
+            self.show_technical_analysis()
         
         with tab4:
+            self.show_trade_history()
+        
+        with tab5:
             self.show_performance_analysis()
     
     def show_dashboard(self):
@@ -608,6 +617,13 @@ class OptimizedScalpingBot:
         """Clear trade history"""
         self.session_state.trade_history = []
         st.success("🗑️ Trade history cleared")
+    
+    def show_oauth_setup(self):
+        """Show OAuth setup interface"""
+        st.subheader("🔐 Schwab OAuth Authentication")
+        
+        schwab_auth = SchwabAuth()
+        schwab_auth.show_auth_interface()
     
     def show_performance_metrics(self):
         """Show detailed performance metrics"""
