@@ -674,7 +674,7 @@ class OptimizedScalpingBot:
     
     def show_simple_oauth_sidebar(self):
         """Show simple OAuth interface in sidebar"""
-        st.sidebar.info("📋 Schwab Auth Required - Cloud Ready")
+        st.sidebar.info("📋 Schwab Auth Required - Cloud Updated")
         
         # Generate authorization URL
         client_id = os.getenv("SCHWAB_CLIENT_ID")
