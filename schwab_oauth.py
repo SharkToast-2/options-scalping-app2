@@ -45,9 +45,26 @@ def get_authorization_code():
         print(f"\n⚠️ Could not open browser automatically: {e}")
         print("Please manually open the authorization URL above")
     
-    # Get redirect URL from user
+    # Get redirect URL from user with validation
     print("\n" + "=" * 50)
-    redirect_url = input("Paste the redirect URL here: ").strip()
+    while True:
+        redirect_url = input("Paste the redirect URL here: ").strip()
+        
+        # Validate URL format
+        if not redirect_url:
+            print("❌ URL cannot be empty. Please try again.")
+            continue
+            
+        if not redirect_url.startswith(('http://', 'https://')):
+            print("❌ Invalid URL format. Please enter a valid URL.")
+            continue
+            
+        if 'schwab' not in redirect_url.lower():
+            print("⚠️ Warning: URL doesn't appear to be from Schwab. Continue anyway? (y/n): ")
+            if input().lower() != 'y':
+                continue
+                
+        break
     
     # Extract authorization code
     try:

@@ -1,0 +1,23 @@
+{
+  "version": "1.0",
+  "api_security": {
+    "rate_limiting": {
+      "enabled": true,
+      "requests_per_minute": 100,
+      "burst_limit": 20
+    },
+    "timeout": {
+      "connect": 10,
+      "read": 30
+    },
+    "retry": {
+      "max_attempts": 3,
+      "backoff_factor": 2
+    }
+  },
+  "ssl_verification": true,
+  "allowed_hosts": [
+    "api.schwabapi.com",
+    "developer.schwab.com"
+  ]
+}
