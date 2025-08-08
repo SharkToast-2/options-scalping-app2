@@ -143,8 +143,12 @@ class OptimizedScalpingBot:
         
         # Schwab Authentication
         st.sidebar.subheader("🔐 Schwab Authentication")
-        schwab_auth = SchwabAuth()
-        schwab_auth.show_auth_interface()
+        try:
+            schwab_auth = SchwabAuth()
+            schwab_auth.show_auth_interface()
+        except Exception as e:
+            st.sidebar.error("❌ OAuth module error")
+            self.show_simple_oauth_sidebar()
         
         # Bot control
         st.sidebar.subheader("🎮 Bot Control")
@@ -624,8 +628,75 @@ class OptimizedScalpingBot:
         """Show OAuth setup interface"""
         st.subheader("🔐 Schwab OAuth Authentication")
         
-        schwab_auth = SchwabAuth()
-        schwab_auth.show_auth_interface()
+        try:
+            schwab_auth = SchwabAuth()
+            schwab_auth.show_auth_interface()
+        except Exception as e:
+            st.error(f"❌ Error loading OAuth module: {e}")
+            self.show_simple_oauth_interface()
+    
+    def show_simple_oauth_interface(self):
+        """Show simple OAuth interface as fallback"""
+        st.info("📋 Schwab Authentication Required")
+        
+        st.markdown("""
+        ### 🔗 Step 1: Get Authorization URL
+        Click the link below to open the Schwab authorization page:
+        """)
+        
+        # Generate authorization URL with your actual client ID
+        client_id = "ldUA8vYfffffryNx194I5cWeWDSy2Jl1"
+        redirect_uri = "https://options-scalping-app-ydqxfd2qjfueqznzvxq9ts.streamlit.app/callback"
+        
+        auth_url = f"https://api.schwabapi.com/v1/oauth/authorize?response_type=code&client_id={client_id}&scope=trading%20market_data%20account_read&redirect_uri={redirect_uri}&state=options_scalper"
+        
+        st.code(auth_url, language="text")
+        
+        # Clickable link
+        st.markdown(f"[🌐 **Click here to open Schwab Authorization Page**]({auth_url})")
+        
+        st.markdown("""
+        ### 📝 Step 2: Complete Authorization
+        1. **Sign in** to your Schwab account
+        2. **Authorize** the application
+        3. **Copy the entire URL** you're redirected to
+        """)
+        
+        # Input for authorization code
+        st.markdown("### 📋 Step 3: Paste Authorization URL")
+        
+        auth_url_input = st.text_input(
+            "Paste the complete URL you were redirected to:",
+            placeholder="https://options-scalping-app-ydqxfd2qjfueqznzvxq9ts.streamlit.app/callback?code=...",
+            help="Copy the entire URL from your browser after authorization"
+        )
+        
+        if auth_url_input:
+            if st.button("🔐 Complete Authentication", type="primary"):
+                st.success("✅ Authentication URL received! Processing...")
+                st.info("🔧 This is a placeholder - full OAuth processing will be implemented.")
+    
+    def show_simple_oauth_sidebar(self):
+        """Show simple OAuth interface in sidebar"""
+        st.sidebar.info("📋 Schwab Auth Required")
+        
+        # Generate authorization URL
+        client_id = "ldUA8vYfffffryNx194I5cWeWDSy2Jl1"
+        redirect_uri = "https://options-scalping-app-ydqxfd2qjfueqznzvxq9ts.streamlit.app/callback"
+        
+        auth_url = f"https://api.schwabapi.com/v1/oauth/authorize?response_type=code&client_id={client_id}&scope=trading%20market_data%20account_read&redirect_uri={redirect_uri}&state=options_scalper"
+        
+        st.sidebar.markdown(f"[🌐 **Open Schwab Auth**]({auth_url})")
+        
+        auth_url_input = st.sidebar.text_input(
+            "Paste redirect URL:",
+            placeholder="https://...",
+            help="Paste the URL after authorization"
+        )
+        
+        if auth_url_input:
+            if st.sidebar.button("🔐 Authenticate"):
+                st.sidebar.success("✅ Auth received!")
     
     def show_performance_metrics(self):
         """Show detailed performance metrics"""
