@@ -143,12 +143,7 @@ class OptimizedScalpingBot:
         
         # Schwab Authentication
         st.sidebar.subheader("🔐 Schwab Authentication")
-        try:
-            schwab_auth = SchwabAuth()
-            schwab_auth.show_auth_interface()
-        except Exception as e:
-            st.sidebar.error("❌ OAuth module error")
-            self.show_simple_oauth_sidebar()
+        self.show_simple_oauth_sidebar()
         
         # Bot control
         st.sidebar.subheader("🎮 Bot Control")
@@ -627,13 +622,7 @@ class OptimizedScalpingBot:
     def show_oauth_setup(self):
         """Show OAuth setup interface"""
         st.subheader("🔐 Schwab OAuth Authentication")
-        
-        try:
-            schwab_auth = SchwabAuth()
-            schwab_auth.show_auth_interface()
-        except Exception as e:
-            st.error(f"❌ Error loading OAuth module: {e}")
-            self.show_simple_oauth_interface()
+        self.show_simple_oauth_interface()
     
     def show_simple_oauth_interface(self):
         """Show simple OAuth interface as fallback"""
