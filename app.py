@@ -634,7 +634,10 @@ class OptimizedScalpingBot:
         """)
         
         # Generate authorization URL with your actual client ID
-        client_id = "ldUA8vYfffffryNx194I5cWeWDSy2Jl1"
+        client_id = os.getenv("SCHWAB_CLIENT_ID")
+        if not client_id:
+            st.error("❌ SCHWAB_CLIENT_ID not found in environment variables")
+            return
         redirect_uri = "https://options-scalping-app-ydqxfd2qjfueqznzvxq9ts.streamlit.app/callback"
         
         auth_url = f"https://api.schwabapi.com/v1/oauth/authorize?response_type=code&client_id={client_id}&scope=trading%20market_data%20account_read&redirect_uri={redirect_uri}&state=options_scalper"
@@ -662,15 +665,22 @@ class OptimizedScalpingBot:
         
         if auth_url_input:
             if st.button("🔐 Complete Authentication", type="primary"):
-                st.success("✅ Authentication URL received! Processing...")
-                st.info("🔧 This is a placeholder - full OAuth processing will be implemented.")
+                success = self.process_oauth_callback(auth_url_input)
+                if success:
+                    st.success("✅ Authentication completed successfully!")
+                    st.rerun()
+                else:
+                    st.error("❌ Authentication failed. Please check the URL and try again.")
     
     def show_simple_oauth_sidebar(self):
         """Show simple OAuth interface in sidebar"""
         st.sidebar.info("📋 Schwab Auth Required - Cloud Ready")
         
         # Generate authorization URL
-        client_id = "ldUA8vYfffffryNx194I5cWeWDSy2Jl1"
+        client_id = os.getenv("SCHWAB_CLIENT_ID")
+        if not client_id:
+            st.sidebar.error("❌ SCHWAB_CLIENT_ID not found")
+            return
         redirect_uri = "https://options-scalping-app-ydqxfd2qjfueqznzvxq9ts.streamlit.app/callback"
         
         auth_url = f"https://api.schwabapi.com/v1/oauth/authorize?response_type=code&client_id={client_id}&scope=trading%20market_data%20account_read&redirect_uri={redirect_uri}&state=options_scalper"
@@ -685,7 +695,104 @@ class OptimizedScalpingBot:
         
         if auth_url_input:
             if st.sidebar.button("🔐 Authenticate"):
-                st.sidebar.success("✅ Auth received!")
+                success = self.process_oauth_callback(auth_url_input)
+                if success:
+                    st.sidebar.success("✅ Authentication successful!")
+                else:
+                    st.sidebar.error("❌ Authentication failed!")
+    
+    def process_oauth_callback(self, redirect_url):
+        """
+        Process OAuth callback URL and exchange code for token
+        
+        Args:
+            redirect_url (str): The redirect URL from Schwab
+            
+        Returns:
+            bool: True if authentication successful
+        """
+        try:
+            # Extract authorization code from URL
+            if 'code=' not in redirect_url:
+                st.error("❌ No authorization code found in URL")
+                return False
+            
+            # Parse the URL to get the authorization code
+            code_start = redirect_url.find('code=') + 5
+            code_end = redirect_url.find('&', code_start)
+            if code_end == -1:
+                code_end = len(redirect_url)
+            
+            auth_code = redirect_url[code_start:code_end]
+            
+            # Exchange code for token
+            token_data = self.exchange_code_for_token(auth_code)
+            
+            if token_data:
+                # Store token data in trade executor
+                from modules.trade_executor import set_token_data
+                set_token_data(token_data)
+                
+                # Store in session state
+                st.session_state.schwab_authenticated = True
+                st.session_state.token_data = token_data
+                
+                return True
+            else:
+                return False
+                
+        except Exception as e:
+            st.error(f"❌ Error processing OAuth callback: {e}")
+            return False
+    
+    def exchange_code_for_token(self, auth_code):
+        """
+        Exchange authorization code for access token
+        
+        Args:
+            auth_code (str): Authorization code from OAuth flow
+            
+        Returns:
+            dict: Token data or None if failed
+        """
+        try:
+            import requests
+            
+            # Schwab OAuth token endpoint
+            token_url = "https://api.schwabapi.com/v1/oauth/token"
+            
+            # Your OAuth credentials
+            client_id = os.getenv("SCHWAB_CLIENT_ID")
+            client_secret = os.getenv("SCHWAB_CLIENT_SECRET")
+            if not client_id or not client_secret:
+                print("❌ Missing OAuth credentials in environment variables")
+                return None
+            redirect_uri = "https://options-scalping-app-ydqxfd2qjfueqznzvxq9ts.streamlit.app/callback"
+            
+            # Token request payload
+            payload = {
+                'grant_type': 'authorization_code',
+                'code': auth_code,
+                'redirect_uri': redirect_uri,
+                'client_id': client_id,
+                'client_secret': client_secret
+            }
+            
+            # Make token request
+            response = requests.post(token_url, data=payload)
+            
+            if response.status_code == 200:
+                token_data = response.json()
+                print("✅ OAuth token exchange successful")
+                return token_data
+            else:
+                print(f"❌ Token exchange failed: {response.status_code}")
+                print(response.text)
+                return None
+                
+        except Exception as e:
+            print(f"❌ Error exchanging code for token: {e}")
+            return None
     
     def show_performance_metrics(self):
         """Show detailed performance metrics"""

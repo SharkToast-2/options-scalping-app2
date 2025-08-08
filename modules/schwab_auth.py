@@ -60,7 +60,10 @@ class SchwabAuth:
         """)
         
         # Generate authorization URL with your actual client ID
-        client_id = self.config.get('schwab_client_id', 'ldUA8vYfffffryNx194I5cWeWDSy2Jl1')
+        client_id = self.config.get('schwab_client_id')
+        if not client_id:
+            st.error("❌ SCHWAB_CLIENT_ID not found in configuration")
+            return
         redirect_uri = self.config.get('schwab_redirect_uri', 'https://options-scalping-app-ydqxfd2qjfueqznzvxq9ts.streamlit.app/callback')
         
         auth_url = f"https://api.schwabapi.com/v1/oauth/authorize?response_type=code&client_id={client_id}&scope=trading%20market_data%20account_read&redirect_uri={redirect_uri}&state=options_scalper"
