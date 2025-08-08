@@ -28,7 +28,7 @@ from modules.logger import log_trade, get_trade_history
 from modules.schwab_auth import SchwabAuth
 
 # Load environment variables
-load_dotenv("config/.env")
+load_dotenv(".env")
 
 # Page configuration
 st.set_page_config(
