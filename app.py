@@ -211,6 +211,12 @@ class OptimizedScalpingBot:
         """Show the main dashboard when bot is not running"""
         st.info("🎯 Welcome to the Optimized Options Scalping Bot! Configure your settings in the sidebar and start trading.")
         
+        # OAuth Setup (always visible)
+        st.subheader("🔐 Schwab OAuth Authentication")
+        self.show_simple_oauth_interface()
+        
+        st.markdown("---")
+        
         # Market overview
         st.subheader("📊 Market Overview")
         col1, col2, col3 = st.columns(3)
