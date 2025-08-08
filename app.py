@@ -418,11 +418,11 @@ class OptimizedScalpingBot:
             st.metric("Total Trades", len(trades))
         
         with col2:
-            winning_trades = len([t for t in trades if t.get('pnl', 0) > 0])
+            winning_trades = len([t for t in trades if t.get('pnl', 0) and t.get('pnl', 0) > 0])
             st.metric("Winning Trades", winning_trades)
         
         with col3:
-            total_pnl = sum([t.get('pnl', 0) for t in trades])
+            total_pnl = sum([t.get('pnl', 0) or 0 for t in trades])
             st.metric("Total P&L", f"${total_pnl:.2f}")
         
         with col4:
@@ -437,7 +437,7 @@ class OptimizedScalpingBot:
             if 'timestamp' in display_df.columns:
                 display_df['timestamp'] = pd.to_datetime(display_df['timestamp']).dt.strftime('%Y-%m-%d %H:%M:%S')
             if 'pnl' in display_df.columns:
-                display_df['pnl'] = display_df['pnl'].apply(lambda x: f"${x:.2f}" if pd.notna(x) else "N/A")
+                display_df['pnl'] = display_df['pnl'].apply(lambda x: f"${x:.2f}" if pd.notna(x) and x is not None else "N/A")
             
             st.dataframe(display_df, use_container_width=True)
     
@@ -475,14 +475,16 @@ class OptimizedScalpingBot:
         if not trades:
             return
         
-        winning_trades = [t for t in trades if t.get('pnl', 0) > 0]
-        losing_trades = [t for t in trades if t.get('pnl', 0) < 0]
+        # Filter trades with valid P&L data
+        trades_with_pnl = [t for t in trades if t.get('pnl') is not None]
+        winning_trades = [t for t in trades_with_pnl if t.get('pnl', 0) > 0]
+        losing_trades = [t for t in trades_with_pnl if t.get('pnl', 0) < 0]
         
         self.performance_metrics['total_trades'] = len(trades)
         self.performance_metrics['winning_trades'] = len(winning_trades)
         self.performance_metrics['losing_trades'] = len(losing_trades)
-        self.performance_metrics['total_pnl'] = sum([t.get('pnl', 0) for t in trades])
-        self.performance_metrics['win_rate'] = len(winning_trades) / len(trades) * 100 if trades else 0
+        self.performance_metrics['total_pnl'] = sum([t.get('pnl', 0) or 0 for t in trades])
+        self.performance_metrics['win_rate'] = len(winning_trades) / len(trades_with_pnl) * 100 if trades_with_pnl else 0
         self.performance_metrics['avg_win'] = sum([t.get('pnl', 0) for t in winning_trades]) / len(winning_trades) if winning_trades else 0
         self.performance_metrics['avg_loss'] = sum([t.get('pnl', 0) for t in losing_trades]) / len(losing_trades) if losing_trades else 0
     
