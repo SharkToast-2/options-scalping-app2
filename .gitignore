@@ -28,6 +28,12 @@ ENV/
 env.bak/
 venv.bak/
 .venv/
+bin/
+include/
+lib/
+lib64/
+share/
+pyvenv.cfg
 
 # Environment variables and secrets
 .env
@@ -35,6 +41,8 @@ venv.bak/
 .env.production
 .env.staging
 config/.env
+config/secure_config.json
+config/.secret_key
 *.key
 *.pem
 *.p12
