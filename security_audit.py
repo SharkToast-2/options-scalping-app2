@@ -111,12 +111,15 @@ class SecurityAudit:
         
         # Exclude virtual environment and package files
         exclude_patterns = [
-            "lib/python*/site-packages/",
+            "lib/python",
             "venv/",
             "env/",
             ".venv/",
             "node_modules/",
-            "__pycache__/"
+            "__pycache__/",
+            "bin/",
+            "include/",
+            "share/"
         ]
         
         found_sensitive = []
@@ -247,6 +250,20 @@ class SecurityAudit:
         
         api_issues = []
         
+        # Load environment variables from .env file
+        env_file = self.project_root / ".env"
+        if env_file.exists():
+            try:
+                from dotenv import load_dotenv
+                load_dotenv(env_file)
+            except ImportError:
+                # Fallback: manually parse .env file
+                with open(env_file, 'r') as f:
+                    for line in f:
+                        if '=' in line and not line.startswith('#'):
+                            key, value = line.strip().split('=', 1)
+                            os.environ[key] = value
+        
         # Check environment variables
         env_vars = [
             "SCHWAB_CLIENT_ID",
@@ -263,8 +280,25 @@ class SecurityAudit:
         if not found_env_vars:
             api_issues.append("No API keys found in environment variables")
         
-        # Check for hardcoded keys in code
-        python_files = list(self.project_root.rglob("*.py"))
+        # Check for hardcoded keys in code (exclude virtual environment)
+        exclude_patterns = [
+            "lib/python",
+            "venv/",
+            "env/",
+            ".venv/",
+            "node_modules/",
+            "__pycache__/",
+            "bin/",
+            "include/",
+            "share/"
+        ]
+        
+        python_files = []
+        for file_path in self.project_root.rglob("*.py"):
+            file_str = str(file_path)
+            if not any(exclude in file_str for exclude in exclude_patterns):
+                python_files.append(file_path)
+        
         hardcoded_keys = []
         
         for file_path in python_files:
