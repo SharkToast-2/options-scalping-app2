@@ -7,7 +7,7 @@ import os
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv('config/.env')
+load_dotenv('.env')
 
 # Schwab API Configuration
 SCHWAB_CLIENT_ID = os.getenv('SCHWAB_CLIENT_ID')
