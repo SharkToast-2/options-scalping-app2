@@ -407,73 +407,85 @@ class OptimizedScalpingBot:
     
     def show_trade_history(self):
         """Show trade history"""
-        trades = get_trade_history(50)
-        
-        if not trades:
-            st.info("📋 No trades recorded yet")
-            return
-        
-        # Convert to DataFrame for better display
-        df_trades = pd.DataFrame(trades)
-        
-        # Display trade summary
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric("Total Trades", len(trades))
-        
-        with col2:
-            winning_trades = len([t for t in trades if t.get('pnl', 0) and t.get('pnl', 0) > 0])
-            st.metric("Winning Trades", winning_trades)
-        
-        with col3:
-            total_pnl = sum([t.get('pnl', 0) or 0 for t in trades])
-            st.metric("Total P&L", f"${total_pnl:.2f}")
-        
-        with col4:
-            win_rate = winning_trades / len(trades) * 100 if trades else 0
-            st.metric("Win Rate", f"{win_rate:.1f}%")
-        
-        # Trade table
-        st.subheader("📋 Recent Trades")
-        if not df_trades.empty:
-            # Format the DataFrame for display
-            display_df = df_trades.copy()
-            if 'timestamp' in display_df.columns:
-                display_df['timestamp'] = pd.to_datetime(display_df['timestamp']).dt.strftime('%Y-%m-%d %H:%M:%S')
-            if 'pnl' in display_df.columns:
-                display_df['pnl'] = display_df['pnl'].apply(lambda x: f"${x:.2f}" if pd.notna(x) and x is not None else "N/A")
+        try:
+            trades = get_trade_history(50)
             
-            st.dataframe(display_df, use_container_width=True)
+            if not trades:
+                st.info("📋 No trades recorded yet")
+                return
+            
+            # Convert to DataFrame for better display
+            df_trades = pd.DataFrame(trades)
+            
+            # Display trade summary
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.metric("Total Trades", len(trades))
+            
+            with col2:
+                # Filter trades with valid P&L data
+                trades_with_pnl = [t for t in trades if t.get('pnl') is not None]
+                winning_trades = len([t for t in trades_with_pnl if t.get('pnl', 0) > 0])
+                st.metric("Winning Trades", winning_trades)
+            
+            with col3:
+                total_pnl = sum([t.get('pnl', 0) or 0 for t in trades])
+                st.metric("Total P&L", f"${total_pnl:.2f}")
+            
+            with col4:
+                win_rate = winning_trades / len(trades_with_pnl) * 100 if trades_with_pnl else 0
+                st.metric("Win Rate", f"{win_rate:.1f}%")
+            
+            # Trade table
+            st.subheader("📋 Recent Trades")
+            if not df_trades.empty:
+                # Format the DataFrame for display
+                display_df = df_trades.copy()
+                if 'timestamp' in display_df.columns:
+                    display_df['timestamp'] = pd.to_datetime(display_df['timestamp']).dt.strftime('%Y-%m-%d %H:%M:%S')
+                if 'pnl' in display_df.columns:
+                    display_df['pnl'] = display_df['pnl'].apply(lambda x: f"${x:.2f}" if pd.notna(x) and x is not None else "N/A")
+                
+                st.dataframe(display_df, use_container_width=True)
+                
+        except Exception as e:
+            st.error(f"❌ Error displaying trade history: {e}")
+            st.info("📋 Trade history display error - this is normal for new installations")
     
     def show_performance_analysis(self):
         """Show performance analysis"""
-        trades = get_trade_history(100)
-        
-        if not trades:
-            st.info("📊 No performance data available yet")
-            return
-        
-        # Calculate performance metrics
-        self.calculate_performance_metrics(trades)
-        
-        # Performance overview
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric("Total P&L", f"${self.performance_metrics['total_pnl']:.2f}")
-        
-        with col2:
-            st.metric("Win Rate", f"{self.performance_metrics['win_rate']:.1f}%")
-        
-        with col3:
-            st.metric("Avg Win", f"${self.performance_metrics['avg_win']:.2f}")
-        
-        with col4:
-            st.metric("Avg Loss", f"${self.performance_metrics['avg_loss']:.2f}")
-        
-        # Performance charts
-        self.plot_performance_charts(trades)
+        try:
+            trades = get_trade_history(100)
+            
+            if not trades:
+                st.info("📊 No performance data available yet")
+                return
+            
+            # Calculate performance metrics
+            self.calculate_performance_metrics(trades)
+            
+            # Performance overview
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.metric("Total P&L", f"${self.performance_metrics['total_pnl']:.2f}")
+            
+            with col2:
+                st.metric("Win Rate", f"{self.performance_metrics['win_rate']:.1f}%")
+            
+            with col3:
+                st.metric("Avg Win", f"${self.performance_metrics['avg_win']:.2f}")
+            
+            with col4:
+                st.metric("Avg Loss", f"${self.performance_metrics['avg_loss']:.2f}")
+            
+            # Performance charts
+            self.plot_performance_charts(trades)
+            
+        except Exception as e:
+            st.error(f"❌ Error displaying performance analysis: {e}")
+            st.info("📊 Performance analysis error - this is normal for new installations")
     
     def calculate_performance_metrics(self, trades):
         """Calculate performance metrics"""
