@@ -102,17 +102,18 @@ class OptimizedScalpingBot:
         # Sidebar configuration
         self.setup_sidebar()
         
+        # Show OAuth interface (always visible)
+        st.markdown("---")
+        st.subheader("🔐 Schwab OAuth Authentication")
+        self.show_simple_oauth_interface()
+        
+        st.markdown("---")
+        
         # Main content
         if self.session_state.bot_running:
             self.run_trading_session()
         else:
             self.show_dashboard()
-            
-        # Show OAuth interface when bot is toggled on
-        if self.session_state.bot_running:
-            st.markdown("---")
-            st.subheader("🔐 Schwab OAuth Authentication Required")
-            self.show_simple_oauth_interface()
     
     def setup_sidebar(self):
         """Setup sidebar configuration"""
