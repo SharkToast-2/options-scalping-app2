@@ -30,6 +30,37 @@ from modules.schwab_auth import SchwabAuth
 # Load environment variables
 load_dotenv(".env")
 
+# Ensure environment variables are loaded
+import os
+if not os.getenv("SCHWAB_CLIENT_ID"):
+    # Try loading from absolute path
+    import pathlib
+    env_path = pathlib.Path(__file__).parent / ".env"
+    load_dotenv(env_path)
+
+# Debug environment variables loading
+print(f"DEBUG: SCHWAB_CLIENT_ID loaded: {'YES' if os.getenv('SCHWAB_CLIENT_ID') else 'NO'}")
+print(f"DEBUG: Current working directory: {os.getcwd()}")
+print(f"DEBUG: .env file exists: {os.path.exists('.env')}")
+
+def load_environment_variables():
+    """Load environment variables for Streamlit context"""
+    # Load from .env file
+    load_dotenv(".env")
+    
+    # For Streamlit Cloud, also check secrets
+    if hasattr(st, 'secrets'):
+        if 'SCHWAB_CLIENT_ID' in st.secrets:
+            os.environ['SCHWAB_CLIENT_ID'] = st.secrets['SCHWAB_CLIENT_ID']
+        if 'SCHWAB_CLIENT_SECRET' in st.secrets:
+            os.environ['SCHWAB_CLIENT_SECRET'] = st.secrets['SCHWAB_CLIENT_SECRET']
+        if 'SCHWAB_MARKET_DATA_KEY' in st.secrets:
+            os.environ['SCHWAB_MARKET_DATA_KEY'] = st.secrets['SCHWAB_MARKET_DATA_KEY']
+        if 'SCHWAB_MARKET_DATA_SECRET' in st.secrets:
+            os.environ['SCHWAB_MARKET_DATA_SECRET'] = st.secrets['SCHWAB_MARKET_DATA_SECRET']
+    
+    return os.getenv("SCHWAB_CLIENT_ID") is not None
+
 # Page configuration
 st.set_page_config(
     page_title="🚀 Optimized Options Scalping Bot",
@@ -98,6 +129,12 @@ class OptimizedScalpingBot:
         """Main application runner"""
         # Header
         st.markdown('<h1 class="main-header">🚀 Optimized Options Scalping Bot</h1>', unsafe_allow_html=True)
+        
+        # Debug environment variables
+        st.sidebar.write("🔧 Debug Info:")
+        st.sidebar.write(f"SCHWAB_CLIENT_ID: {'✅ Found' if os.getenv('SCHWAB_CLIENT_ID') else '❌ NOT FOUND'}")
+        st.sidebar.write(f"Working Directory: {os.getcwd()}")
+        st.sidebar.write(f".env exists: {'✅ Yes' if os.path.exists('.env') else '❌ No'}")
         
         # Sidebar configuration
         self.setup_sidebar()
@@ -237,12 +274,16 @@ class OptimizedScalpingBot:
     
     def show_market_status(self):
         """Display market status"""
-        market_status = data_fetcher.get_market_status()
-        
-        if market_status['is_open']:
-            st.metric("Market Status", "🟢 OPEN", delta=f"Closes in {market_status['time_to_close']/3600:.1f}h")
-        else:
-            st.metric("Market Status", "🔴 CLOSED", delta=f"Opens in {market_status['time_to_open']/3600:.1f}h")
+        try:
+            market_status = data_fetcher.get_market_status()
+            
+            if market_status['is_open']:
+                st.metric("Market Status", "🟢 OPEN", delta=f"Closes in {market_status['time_to_close']/3600:.1f}h")
+            else:
+                st.metric("Market Status", "🔴 CLOSED", delta=f"Opens in {market_status['time_to_open']/3600:.1f}h")
+        except Exception as e:
+            st.error(f"Error getting market status: {e}")
+            st.metric("Market Status", "❌ ERROR", delta="Check logs")
     
     def show_bot_status(self):
         """Display bot status"""
@@ -653,9 +694,15 @@ class OptimizedScalpingBot:
         """)
         
         # Generate authorization URL with your actual client ID
+        # Load environment variables
+        load_environment_variables()
         client_id = os.getenv("SCHWAB_CLIENT_ID")
+        
         if not client_id:
             st.error("❌ SCHWAB_CLIENT_ID not found in environment variables")
+            st.info("💡 Make sure to configure secrets in Streamlit Cloud for cloud deployment")
+            st.write(f"Current working directory: {os.getcwd()}")
+            st.write(f".env file exists: {os.path.exists('.env')}")
             return
         redirect_uri = "https://options-scalping-app-ydqxfd2qjfueqznzvxq9ts.streamlit.app/callback"
         
@@ -696,6 +743,7 @@ class OptimizedScalpingBot:
         st.sidebar.info("📋 Schwab Auth Required - Cloud Updated")
         
         # Generate authorization URL
+        load_environment_variables()
         client_id = os.getenv("SCHWAB_CLIENT_ID")
         if not client_id:
             st.sidebar.error("❌ SCHWAB_CLIENT_ID not found")
