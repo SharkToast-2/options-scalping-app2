@@ -59,6 +59,19 @@ def load_environment_variables():
         if 'SCHWAB_MARKET_DATA_SECRET' in st.secrets:
             os.environ['SCHWAB_MARKET_DATA_SECRET'] = st.secrets['SCHWAB_MARKET_DATA_SECRET']
     
+    # Force reload environment variables
+    client_id = os.getenv("SCHWAB_CLIENT_ID")
+    if not client_id:
+        # Try manual loading as fallback
+        try:
+            with open(".env", "r") as f:
+                for line in f:
+                    if line.strip() and not line.startswith("#"):
+                        key, value = line.strip().split("=", 1)
+                        os.environ[key] = value
+        except Exception as e:
+            print(f"Error manually loading .env: {e}")
+    
     return os.getenv("SCHWAB_CLIENT_ID") is not None
 
 # Page configuration
@@ -124,6 +137,13 @@ class OptimizedScalpingBot:
             self.session_state.trade_history = []
         if 'performance_data' not in self.session_state:
             self.session_state.performance_data = []
+        if 'env_loaded' not in self.session_state:
+            self.session_state.env_loaded = False
+        
+        # Load environment variables once per session
+        if not self.session_state.env_loaded:
+            load_environment_variables()
+            self.session_state.env_loaded = True
     
     def run(self):
         """Main application runner"""
